@@ -1,19 +1,26 @@
-use std::process::Command;
-use std::string::FromUtf8Error;
+use std::io::{Error, Write};
+use std::process::{Command, Stdio};
 
-fn main() -> Result<(), FromUtf8Error> {
-    let output = Command::new("ls")
-        .arg("-l")
-        .arg("/Users/stepher2/")
-        .output()
+fn main() {
+
+    match copy_to_clipboard("Here is a string") {
+        Err(e) => println!("Encountered an error: {}", e),
+        Ok(_) => {}
+    }
+
+}
+
+
+fn copy_to_clipboard(string_to_copy: &str) -> Result<(), Error> {
+    let process = Command::new("pbcopy")
+        .stdin(Stdio::piped())
+        .spawn()?
+        .stdin
         .unwrap()
-        .stdout;
+        .write(string_to_copy.as_bytes());
 
-    unsafe {
-        String::from_utf8_unchecked(output)
-            .lines()
-            .filter(|s| s.ends_with("py"))
-            .for_each(|line| println!("{}", line));
+    if let Err(e) = process {
+        println!("Encountered error: {}", e);
     }
 
     Ok(())
