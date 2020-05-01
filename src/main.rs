@@ -76,6 +76,12 @@ impl<'a> StatefulPasswordTable<'a> {
             None => (),
         };
     }
+
+    pub fn copy(&mut self) {
+        if let Some(i) = self.state.selected() {
+            copy_to_clipboard( self.items[i][1]);
+        }
+    }
 }
 
 
@@ -92,7 +98,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[allow(dead_code)]
 fn copy_to_clipboard(string_to_copy: &str) -> Result<(), io::Error> {
     let process = Command::new("pbcopy")
         .stdin(Stdio::piped())
@@ -138,14 +143,7 @@ fn render_password_table(
                 .iter()
                 .map(|i| Row::StyledData(i.into_iter(), row_style));
             let t = Table::new(
-                ["Service", "Password"].iter(),
-                vec![
-                    Row::StyledData(["GGmailGmailGmailmail", "ppassword1password1assword1h"].iter(), row_style),
-                    Row::StyledData(["Outlook", "password2"].iter(), row_style),
-                    Row::StyledData(["Reddit", "password3"].iter(), row_style),
-                    Row::StyledData(["Twitch", "password4"].iter(), row_style),
-                ].into_iter(),
-            )
+                ["Service", "Password"].iter(), rows)
                 .block(
                     Block::default()
                         .title("Passwords")
@@ -175,6 +173,9 @@ fn render_password_table(
                 }
                 if key == Key::Char('d') {
                     table.decrypt();
+                }
+                if key == Key::Char('y') {
+                    table.copy();
                 }
             },
             _ => {}
