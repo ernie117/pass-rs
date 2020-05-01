@@ -9,12 +9,12 @@ use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, BorderType, Borders, Row, Table, Widget, TableState};
 use tui::Terminal;
+use tui::widgets::{Block, Borders, BorderType, Row, Table, TableState, Widget};
 
-use crate::event::{Event, Events};
-
-mod event;
+mod util;
+use util::event::{Event, Events};
+use util::json::read_file;
 
 struct PasswordTable {
     invert: bool,
@@ -23,7 +23,7 @@ struct PasswordTable {
 struct StatefulPasswordTable<'a> {
     state: TableState,
     items: Vec<Vec<&'a str>>,
-    encrypted: bool
+    encrypted: bool,
 }
 
 impl<'a> StatefulPasswordTable<'a> {
@@ -36,12 +36,12 @@ impl<'a> StatefulPasswordTable<'a> {
                 vec!["Reddit", "password3"],
                 vec!["Twitch", "password4"]
             ],
-            encrypted: false
+            encrypted: false,
         }
     }
     pub fn next(&mut self) {
         // If moving to a new password from a decrypted one, re-apply encryption.
-        if self.encrypted {self.encrypted = !self.encrypted };
+        if self.encrypted { self.encrypted = !self.encrypted };
         let i = match self.state.selected() {
             Some(i) => {
                 if i >= self.items.len() - 1 {
@@ -56,7 +56,7 @@ impl<'a> StatefulPasswordTable<'a> {
     }
 
     pub fn previous(&mut self) {
-        if self.encrypted {self.encrypted = !self.encrypted };
+        if self.encrypted { self.encrypted = !self.encrypted };
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -72,28 +72,34 @@ impl<'a> StatefulPasswordTable<'a> {
 
     pub fn decrypt(&mut self) {
         match self.state.selected() {
-            Some(i) => self.encrypted = !self.encrypted,
+            Some(i) => {
+                self.encrypted = !self.encrypted;
+                self.items[i][1] = "something";
+            },
             None => (),
         };
     }
 
     pub fn copy(&mut self) {
         if let Some(i) = self.state.selected() {
-            copy_to_clipboard( self.items[i][1]);
+            copy_to_clipboard(self.items[i][1]);
         }
     }
 }
 
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let stdout = io::stdout().into_raw_mode()?;
-    let stdout = AlternateScreen::from(stdout);
-    let backend = TermionBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-    terminal.hide_cursor()?;
+    // let stdout = io::stdout().into_raw_mode()?;
+    // let stdout = AlternateScreen::from(stdout);
+    // let backend = TermionBackend::new(stdout);
+    // let mut terminal = Terminal::new(backend)?;
+    // terminal.hide_cursor()?;
 
-    // render_a_block(terminal);
-    render_password_table(terminal);
+    // render_password_table(terminal);
+
+    let h = read_file()?;
+    let v: Vec<&String> = h.keys().collect();
+    println!("{:?}", v);
 
     Ok(())
 }
@@ -177,65 +183,6 @@ fn render_password_table(
                 if key == Key::Char('y') {
                     table.copy();
                 }
-            },
-            _ => {}
-        }
-    }
-
-    Ok(())
-}
-
-#[allow(dead_code)]
-fn render_a_block(
-    mut terminal: Terminal<TermionBackend<AlternateScreen<RawTerminal<Stdout>>>>,
-) -> Result<(), Box<dyn Error>> {
-    let events = Events::new();
-    let mut table: PasswordTable = PasswordTable { invert: false };
-    let mut colour: Color = Color::DarkGray;
-
-    loop {
-        if table.invert {
-            colour = Color::Reset;
-        } else {
-            colour = Color::DarkGray;
-        }
-
-        terminal.draw(|mut f| {
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(10), Constraint::Percentage(10)].as_ref())
-                .split(Rect {
-                    x: (f.size().width / 2) - 14,
-                    y: f.size().height / 2 - 12,
-                    width: 35,
-                    height: 20,
-                });
-            let block = Block::default()
-                .style(Style::default().bg(colour))
-                .title("Passwords")
-                .title_style(
-                    Style::default()
-                        .bg(Color::DarkGray)
-                        .modifier(Modifier::ITALIC),
-                )
-                .borders(Borders::ALL)
-                .border_type(BorderType::Rounded)
-                .border_style(
-                    Style::default()
-                        .bg(Color::DarkGray)
-                        .modifier(Modifier::BOLD),
-                );
-            f.render_widget(block, chunks[1]);
-        })?;
-
-        match events.next()? {
-            Event::Input(key) => {
-                if key == Key::Char('q') {
-                    break;
-                }
-                if key == Key::Char('i') {
-                    table.invert = !table.invert;
-                }
             }
             _ => {}
         }
@@ -243,3 +190,4 @@ fn render_a_block(
 
     Ok(())
 }
+
