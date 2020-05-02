@@ -99,12 +99,7 @@ pub fn render_password_table(
                     table.previous();
                 }
                 if key == Key::Char('d') {
-                    // table.decrypt();
-                    // write!(
-                        // terminal.backend_mut(),
-                        // "{}",
-                        // term_cursor::Goto(x, y)
-                    // )?;
+                    table.decrypt();
                 }
                 if key == Key::Char('y') {
                     table.copy();

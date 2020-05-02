@@ -1,13 +1,14 @@
 use std::error::Error;
 use std::io;
 
+use termion::input::MouseTerminal;
 use termion::raw::IntoRawMode;
 use termion::screen::AlternateScreen;
-use termion::input::MouseTerminal;
 use tui::backend::TermionBackend;
 use tui::Terminal;
 
 use crate::rendering::render_password_table;
+use crate::util::utils::decrypt;
 
 mod rendering;
 mod stateful_table;

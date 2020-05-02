@@ -1,3 +1,4 @@
+use std::char;
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::Write;
@@ -7,7 +8,7 @@ pub fn build_table_rows(map: HashMap<String, String>) -> Result<Vec<Vec<String>>
     let mut vec_of_vecs = Vec::new();
 
     for (key, value) in map {
-        let new_vec = vec![key, value];
+        let new_vec = vec![decrypt(&key), decrypt(&value)];
         vec_of_vecs.push(new_vec);
     }
 
@@ -30,4 +31,11 @@ pub fn copy_to_clipboard(string_to_copy: &str) -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+pub fn decrypt(string: &str) -> String {
+    string
+        .chars()
+        .map(|ch| char::from_u32(6 ^ ch as u32).unwrap())
+        .collect()
 }

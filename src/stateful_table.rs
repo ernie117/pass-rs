@@ -1,4 +1,5 @@
-use crate::util::utils::copy_to_clipboard;
+use crate::util::utils::{copy_to_clipboard, decrypt};
+use std::fmt::Write as FmtWrite;
 use tui::widgets::TableState;
 
 pub struct StatefulPasswordTable {
@@ -51,10 +52,10 @@ impl StatefulPasswordTable {
     }
 
     pub fn decrypt(&mut self) {
+        // TODO find a way to actually obfuscate the passwords
         match self.state.selected() {
             Some(i) => {
                 self.encrypted = !self.encrypted;
-                self.items[i][1] = "something".to_string();
             }
             None => (),
         };
@@ -62,7 +63,7 @@ impl StatefulPasswordTable {
 
     pub fn copy(&mut self) {
         if let Some(i) = self.state.selected() {
-            if let Err(error) = copy_to_clipboard(&self.items[i][1]) {
+            if let Err(error) = copy_to_clipboard(&decrypt(&self.items[i][1])) {
                 println!("Error copying to clipboard: {}", error);
             }
         }
