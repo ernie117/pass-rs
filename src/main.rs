@@ -31,7 +31,7 @@ impl<'a> StatefulPasswordTable {
     fn new() -> StatefulPasswordTable {
         StatefulPasswordTable {
             state: TableState::default(),
-            items: build_table_rows(read_file().unwrap()).unwrap(),
+            items: Vec::new(),
             encrypted: false,
         }
     }
@@ -111,6 +111,7 @@ fn render_password_table(
     let row_style = Style::default().fg(Color::White);
 
     let mut table = StatefulPasswordTable::new();
+    table.items = build_table_rows(read_file()?)?;
 
     loop {
         let mut highlight_colour = Color::Red;
@@ -118,6 +119,9 @@ fn render_password_table(
             highlight_colour = Color::Green;
         }
 
+        let rows = table.items
+            .iter()
+            .map(|i| Row::StyledData(i.into_iter(), row_style));
         terminal.draw(|mut f| {
             let rects = Layout::default()
                 .constraints([Constraint::Percentage(100)].as_ref())
@@ -127,7 +131,6 @@ fn render_password_table(
                     width: 70,
                     height: 24,
                 });
-            let header = ["Service", "Passwords"];
 
             let rows = table.items
                 .iter()
