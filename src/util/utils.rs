@@ -37,6 +37,7 @@ pub fn copy_to_clipboard(string_to_copy: &str) -> Result<(), Box<dyn Error>> {
 pub fn decrypt(string: &str) -> String {
     string
         .chars()
-        .map(|ch| char::from_u32(6 ^ ch as u32).unwrap())
+        .map(|ch| 6 ^ ch as u8)
+        .map(|d| d as char)
         .collect()
 }
