@@ -70,7 +70,7 @@ pub fn render_password_table(
                     x: (f.size().width / 2) - 35,
                     y: f.size().height - 12,
                     width: 70,
-                    height: 4,
+                    height: 6,
                 });
             let messages = [
                 "j/down to move down",
