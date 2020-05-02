@@ -23,9 +23,9 @@ pub fn render_password_table(
 
     let mut cfg = read_config_file()?;
     let mut table = StatefulPasswordTable::new();
-    table.items = build_table_rows(read_password_file()?)?;
 
     loop {
+        table.items = build_table_rows(read_password_file()?)?;
         cfg = read_config_file()?;
         let mut highlight_colour = Color::Red;
         if table.encrypted {
