@@ -8,7 +8,7 @@ pub fn build_table_rows(map: HashMap<String, String>) -> Result<Vec<Vec<String>>
     let mut vec_of_vecs = Vec::new();
 
     for (key, value) in map {
-        let new_vec = vec![decrypt(&key), decrypt(&value)];
+        let new_vec = vec![key, decrypt(&value)];
         vec_of_vecs.push(new_vec);
     }
 
@@ -33,6 +33,7 @@ pub fn copy_to_clipboard(string_to_copy: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[inline]
 pub fn decrypt(string: &str) -> String {
     string
         .chars()

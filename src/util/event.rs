@@ -12,16 +12,12 @@ use termion::input::TermRead;
 
 pub enum Event<I> {
     Input(I),
-    Tick,
 }
 
 /// A small event handler that wrap termion input and tick events. Each event
 /// type is handled in its own thread and returned to a common `Receiver`
 pub struct Events {
     rx: mpsc::Receiver<Event<Key>>,
-    input_handle: thread::JoinHandle<()>,
-    ignore_exit_key: Arc<AtomicBool>,
-    tick_handle: thread::JoinHandle<()>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -47,7 +43,7 @@ impl Events {
     pub fn with_config(config: Config) -> Events {
         let (tx, rx) = mpsc::channel();
         let ignore_exit_key = Arc::new(AtomicBool::new(false));
-        let input_handle = {
+        let _input_handle = {
             let tx = tx.clone();
             let ignore_exit_key = ignore_exit_key.clone();
             thread::spawn(move || {
@@ -67,33 +63,12 @@ impl Events {
                 }
             })
         };
-        let tick_handle = {
-            let tx = tx.clone();
-            thread::spawn(move || {
-                let tx = tx.clone();
-                loop {
-                    tx.send(Event::Tick).unwrap();
-                    thread::sleep(config.tick_rate);
-                }
-            })
-        };
         Events {
             rx,
-            ignore_exit_key,
-            input_handle,
-            tick_handle,
         }
     }
 
     pub fn next(&self) -> Result<Event<Key>, mpsc::RecvError> {
         self.rx.recv()
-    }
-
-    pub fn disable_exit_key(&mut self) {
-        self.ignore_exit_key.store(true, Ordering::Relaxed);
-    }
-
-    pub fn enable_exit_key(&mut self) {
-        self.ignore_exit_key.store(false, Ordering::Relaxed);
     }
 }

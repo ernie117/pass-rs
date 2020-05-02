@@ -1,6 +1,5 @@
 use std::error::Error;
 use std::io::Stdout;
-use std::io::Write;
 
 use termion::raw::RawTerminal;
 use termion::screen::AlternateScreen;
@@ -12,7 +11,6 @@ use crate::stateful_table::StatefulPasswordTable;
 use crate::util::event::{Event, Events};
 use crate::util::json::{read_config, read_passwords};
 use crate::util::utils::build_table_rows;
-use termion::cursor::DetectCursorPos;
 use termion::event::Key;
 use termion::input::MouseTerminal;
 use tui::layout::{Constraint, Layout, Rect};
@@ -105,7 +103,6 @@ pub fn render_password_table(
                     table.copy();
                 }
             }
-            _ => {}
         }
     }
 

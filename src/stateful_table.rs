@@ -1,5 +1,4 @@
 use crate::util::utils::{copy_to_clipboard, decrypt};
-use std::fmt::Write as FmtWrite;
 use tui::widgets::TableState;
 
 pub struct StatefulPasswordTable {
@@ -54,7 +53,7 @@ impl StatefulPasswordTable {
     pub fn decrypt(&mut self) {
         // TODO find a way to actually obfuscate the passwords
         match self.state.selected() {
-            Some(i) => {
+            Some(_i) => {
                 self.encrypted = !self.encrypted;
             }
             None => (),

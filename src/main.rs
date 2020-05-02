@@ -8,7 +8,6 @@ use tui::backend::TermionBackend;
 use tui::Terminal;
 
 use crate::rendering::render_password_table;
-use crate::util::utils::decrypt;
 
 mod rendering;
 mod stateful_table;
