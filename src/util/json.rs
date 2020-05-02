@@ -32,28 +32,30 @@ impl Default for CursesConfigs {
     }
 }
 
-pub fn read_password_file() -> Result<HashMap<String, String>, Box<dyn Error>> {
-    let path =
-        home_dir().unwrap().into_os_string().into_string().unwrap() + "/.passcurses/passwords.json";
-    let file = File::open(path)?;
-    let bufreader = BufReader::new(file);
-
+pub fn read_passwords() -> Result<HashMap<String, String>, Box<dyn Error>> {
+    let bufreader = read_json_file("passwords")?;
     let map: HashMap<String, String> = serde_json::from_reader(bufreader)?;
 
     Ok(map)
 }
 
-pub fn read_config_file() -> Result<CursesConfigs, Box<dyn Error>> {
-    let path =
-        home_dir().unwrap().into_os_string().into_string().unwrap() + "/.passcurses/config.json";
-    let file = File::open(path)?;
-    let bufreader = BufReader::new(file);
-
+pub fn read_config() -> Result<CursesConfigs, Box<dyn Error>> {
+    let bufreader = read_json_file("config")?;
     let raw_config: RawConfigs = serde_json::from_reader(bufreader)?;
-
     let cfg: CursesConfigs = map_configs(raw_config);
 
     Ok(cfg)
+}
+
+fn read_json_file(path: &str) -> Result<BufReader<File>, Box<dyn Error>> {
+    let path = home_dir().unwrap().into_os_string().into_string().unwrap()
+        + "/.passcurses/"
+        + path
+        + ".json";
+    let file = File::open(path)?;
+    let bufreader = BufReader::new(file);
+
+    Ok(bufreader)
 }
 
 fn map_configs(raw_config: RawConfigs) -> CursesConfigs {

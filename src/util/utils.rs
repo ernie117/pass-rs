@@ -7,7 +7,7 @@ pub fn build_table_rows(map: HashMap<String, String>) -> Result<Vec<Vec<String>>
     let mut vec_of_vecs = Vec::new();
 
     for (key, value) in map {
-        let mut new_vec = vec![key, value];
+        let new_vec = vec![key, value];
         vec_of_vecs.push(new_vec);
     }
 

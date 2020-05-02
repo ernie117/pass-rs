@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::io::Stdout;
+use std::io::Write;
 
 use termion::raw::RawTerminal;
 use termion::screen::AlternateScreen;
@@ -9,24 +10,25 @@ use tui::Terminal;
 
 use crate::stateful_table::StatefulPasswordTable;
 use crate::util::event::{Event, Events};
-use crate::util::json::{read_config_file, read_password_file};
+use crate::util::json::{read_config, read_passwords};
 use crate::util::utils::build_table_rows;
+use termion::cursor::DetectCursorPos;
 use termion::event::Key;
+use termion::input::MouseTerminal;
 use tui::layout::{Constraint, Layout, Rect};
 use tui::widgets::{Block, Borders, List, Row, Table, Text};
 
 pub fn render_password_table(
-    mut terminal: Terminal<TermionBackend<AlternateScreen<RawTerminal<Stdout>>>>,
+    mut terminal: Terminal<TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>>,
 ) -> Result<(), Box<dyn Error>> {
     let events = Events::new();
     let row_style = Style::default().fg(Color::White);
 
-    let mut cfg = read_config_file()?;
     let mut table = StatefulPasswordTable::new();
 
     loop {
-        table.items = build_table_rows(read_password_file()?)?;
-        cfg = read_config_file()?;
+        table.items = build_table_rows(read_passwords()?)?;
+        let cfg = read_config()?;
         let mut highlight_colour = Color::Red;
         if table.encrypted {
             highlight_colour = Color::Green;
@@ -97,7 +99,12 @@ pub fn render_password_table(
                     table.previous();
                 }
                 if key == Key::Char('d') {
-                    table.decrypt();
+                    // table.decrypt();
+                    // write!(
+                        // terminal.backend_mut(),
+                        // "{}",
+                        // term_cursor::Goto(x, y)
+                    // )?;
                 }
                 if key == Key::Char('y') {
                     table.copy();

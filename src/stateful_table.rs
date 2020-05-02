@@ -62,7 +62,9 @@ impl StatefulPasswordTable {
 
     pub fn copy(&mut self) {
         if let Some(i) = self.state.selected() {
-            copy_to_clipboard(&self.items[i][1]);
+            if let Err(error) = copy_to_clipboard(&self.items[i][1]) {
+                println!("Error copying to clipboard: {}", error);
+            }
         }
     }
 }
