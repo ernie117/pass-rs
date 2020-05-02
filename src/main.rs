@@ -7,41 +7,39 @@ use termion::event::Key;
 use termion::raw::{IntoRawMode, RawTerminal};
 use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
-use tui::layout::{Constraint, Direction, Layout, Rect};
+use tui::layout::{Constraint, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
+use tui::widgets::{Block, BorderType, Borders, Row, Table, TableState};
 use tui::Terminal;
-use tui::widgets::{Block, Borders, BorderType, Row, Table, TableState, Widget};
 
 mod util;
 use util::event::{Event, Events};
 use util::json::read_file;
+use util::utils::build_table_rows;
 
 struct PasswordTable {
     invert: bool,
 }
 
-struct StatefulPasswordTable<'a> {
+struct StatefulPasswordTable {
     state: TableState,
-    items: Vec<Vec<&'a str>>,
+    items: Vec<Vec<String>>,
     encrypted: bool,
 }
 
-impl<'a> StatefulPasswordTable<'a> {
-    fn new() -> StatefulPasswordTable<'a> {
+impl<'a> StatefulPasswordTable {
+    fn new() -> StatefulPasswordTable {
         StatefulPasswordTable {
             state: TableState::default(),
-            items: vec![
-                vec!["Gmail", "password1"],
-                vec!["Outlook", "password2"],
-                vec!["Reddit", "password3"],
-                vec!["Twitch", "password4"]
-            ],
+            items: build_table_rows(read_file().unwrap()).unwrap(),
             encrypted: false,
         }
     }
     pub fn next(&mut self) {
         // If moving to a new password from a decrypted one, re-apply encryption.
-        if self.encrypted { self.encrypted = !self.encrypted };
+        if self.encrypted {
+            self.encrypted = !self.encrypted
+        };
         let i = match self.state.selected() {
             Some(i) => {
                 if i >= self.items.len() - 1 {
@@ -56,7 +54,9 @@ impl<'a> StatefulPasswordTable<'a> {
     }
 
     pub fn previous(&mut self) {
-        if self.encrypted { self.encrypted = !self.encrypted };
+        if self.encrypted {
+            self.encrypted = !self.encrypted
+        };
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -74,38 +74,23 @@ impl<'a> StatefulPasswordTable<'a> {
         match self.state.selected() {
             Some(i) => {
                 self.encrypted = !self.encrypted;
-                self.items[i][1] = "something";
-            },
+                self.items[i][1] = "something".to_string();
+            }
             None => (),
         };
     }
 
     pub fn copy(&mut self) {
         if let Some(i) = self.state.selected() {
-            copy_to_clipboard(self.items[i][1]);
+            copy_to_clipboard(&self.items[i][1]);
         }
     }
 }
 
-
-fn main() -> Result<(), Box<dyn Error>> {
-    // let stdout = io::stdout().into_raw_mode()?;
-    // let stdout = AlternateScreen::from(stdout);
-    // let backend = TermionBackend::new(stdout);
-    // let mut terminal = Terminal::new(backend)?;
-    // terminal.hide_cursor()?;
-
-    // render_password_table(terminal);
-
-    let h = read_file()?;
-    let v: Vec<&String> = h.keys().collect();
-    println!("{:?}", v);
-
-    Ok(())
-}
-
 fn copy_to_clipboard(string_to_copy: &str) -> Result<(), io::Error> {
-    let process = Command::new("pbcopy")
+    let process = Command::new("xclip")
+        .arg("-selection")
+        .arg("clipboard")
         .stdin(Stdio::piped())
         .spawn()?
         .stdin
@@ -144,12 +129,10 @@ fn render_password_table(
                 });
             let header = ["Service", "Passwords"];
 
-            let rows = table
-                .items
+            let rows = table.items
                 .iter()
                 .map(|i| Row::StyledData(i.into_iter(), row_style));
-            let t = Table::new(
-                ["Service", "Password"].iter(), rows)
+            let t = Table::new(["Service", "Password"].iter(), rows)
                 .block(
                     Block::default()
                         .title("Passwords")
@@ -187,6 +170,21 @@ fn render_password_table(
             _ => {}
         }
     }
+
+    Ok(())
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let stdout = io::stdout().into_raw_mode()?;
+    let stdout = AlternateScreen::from(stdout);
+    let backend = TermionBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+    terminal.hide_cursor()?;
+
+    let map = read_file()?;
+    let rows = build_table_rows(map)?;
+
+    render_password_table(terminal);
 
     Ok(())
 }
