@@ -9,7 +9,7 @@ use tui::Terminal;
 
 use crate::stateful_table::StatefulPasswordTable;
 use crate::util::event::{Event, Events};
-use crate::util::json::{read_config, read_passwords};
+use crate::util::json_utils::{read_config, read_passwords};
 use crate::util::utils::build_table_rows;
 use termion::event::Key;
 use termion::input::MouseTerminal;
@@ -105,7 +105,7 @@ pub fn render_password_table(
                 }
                 if key == Key::Char('r') {
                     if let Err(e) = table.re_encrypt() {
-                        println!("Error reading files: {}", e);
+                        panic!("Error reading files: {}", e);
                     }
                 }
             }

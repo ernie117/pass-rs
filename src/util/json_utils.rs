@@ -3,16 +3,40 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
 use std::error::Error;
-use std::fs::File;
-use std::io::BufReader;
+use std::fs::{File, OpenOptions};
+use std::io::{BufReader, Write};
 use tui::style::Modifier;
 use tui::widgets::BorderType;
+use std::fs;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RawConfigs {
     border_type: String,
     border_style: String,
     title_style: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PasswordsTemplate {
+    example_service: String
+}
+
+impl Default for PasswordsTemplate {
+    fn default() -> PasswordsTemplate {
+        PasswordsTemplate {
+            example_service: "example_password".to_string(),
+        }
+    }
+}
+
+impl Default for RawConfigs {
+    fn default() -> RawConfigs {
+        RawConfigs {
+            border_type: "rounded".to_string(),
+            border_style: "bold".to_string(),
+            title_style: "italic".to_string(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -47,12 +71,29 @@ pub fn read_config() -> Result<CursesConfigs, Box<dyn Error>> {
     Ok(cfg)
 }
 
-fn read_json_file(path: &str) -> Result<BufReader<File>, Box<dyn Error>> {
-    let path = home_dir().unwrap().into_os_string().into_string().unwrap()
+pub fn read_json_file(path: &str) -> Result<BufReader<File>, Box<dyn Error>> {
+    let full_path = home_dir().unwrap().into_os_string().into_string().unwrap()
         + "/.passcurses/"
         + path
         + ".json";
-    let file = File::open(path)?;
+    let clone_path = full_path.clone();
+    let mut file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open(full_path)?;
+    let metadata = fs::metadata(clone_path)?;
+
+    if metadata.len() == 0 {
+        if path == "config" {
+            let default_json_config = serde_json::to_string_pretty(&RawConfigs::default())?;
+            file.write_all(default_json_config.as_bytes())?;
+        } else if path == "passwords" {
+            let passwords_template = serde_json::to_string_pretty(&PasswordsTemplate::default())?;
+            file.write_all(passwords_template.as_bytes())?;
+        }
+    }
+
     let bufreader = BufReader::new(file);
 
     Ok(bufreader)

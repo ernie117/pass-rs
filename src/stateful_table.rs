@@ -1,6 +1,6 @@
 use crate::util::utils::{copy_to_clipboard, decrypt_value, build_table_rows};
 use tui::widgets::TableState;
-use crate::util::json::read_passwords;
+use crate::util::json_utils::read_passwords;
 use std::error::Error;
 
 pub struct StatefulPasswordTable {
@@ -71,11 +71,11 @@ impl StatefulPasswordTable {
         if let Some(i) = self.state.selected() {
             if self.decrypted {
                 if let Err(error) = copy_to_clipboard(&self.items[i][1]) {
-                    println!("Error copying to clipboard: {}", error);
+                    panic!("Error copying to clipboard: {}", error);
                 }
             } else {
                 if let Err(error) = copy_to_clipboard(&decrypt_value(&self.items[i][1])) {
-                    println!("Error copying to clipboard: {}", error);
+                    panic!("Error copying to clipboard: {}", error);
                 }
             }
         }
