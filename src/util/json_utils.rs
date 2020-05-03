@@ -10,14 +10,14 @@ use tui::style::Modifier;
 use tui::widgets::BorderType;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct RawConfigs {
+struct RawConfigs {
     border_type: String,
     border_style: String,
     title_style: String,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct PasswordsTemplate {
+struct PasswordsTemplate {
     example_service: String,
 }
 

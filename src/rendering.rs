@@ -18,11 +18,12 @@ use tui::widgets::{Block, Borders, List, Row, Table, Text};
 
 pub fn render_password_table(
     mut terminal: Terminal<TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>>,
+    key: u8,
 ) -> Result<(), Box<dyn Error>> {
     let events = Events::new();
     let row_style = Style::default().fg(Color::White);
 
-    let mut table = StatefulPasswordTable::new();
+    let mut table = StatefulPasswordTable::new(key);
     table.items = build_table_rows(read_passwords()?)?;
 
     loop {

@@ -7,21 +7,23 @@ pub struct StatefulPasswordTable {
     pub(crate) state: TableState,
     pub(crate) items: Vec<Vec<String>>,
     pub(crate) decrypted: bool,
+    pub(crate) key: u8
 }
 
 impl StatefulPasswordTable {
-    pub(crate) fn new() -> StatefulPasswordTable {
+    pub(crate) fn new(key: u8) -> StatefulPasswordTable {
         StatefulPasswordTable {
             state: TableState::default(),
             items: Vec::new(),
             decrypted: false,
+            key
         }
     }
     pub fn next(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
                 if self.decrypted {
-                    self.items[i][1] = decrypt_value(&self.items[i][1]);
+                    self.items[i][1] = decrypt_value(&self.items[i][1], self.key);
                 }
                 if i >= self.items.len() - 1 {
                     0
@@ -41,7 +43,7 @@ impl StatefulPasswordTable {
         let i = match self.state.selected() {
             Some(i) => {
                 if self.decrypted {
-                    self.items[i][1] = decrypt_value(&self.items[i][1]);
+                    self.items[i][1] = decrypt_value(&self.items[i][1], self.key);
                 }
                 if i == 0 {
                     self.items.len() - 1
@@ -61,7 +63,7 @@ impl StatefulPasswordTable {
         match self.state.selected() {
             Some(i) => {
                 self.decrypted = !self.decrypted;
-                self.items[i][1] = decrypt_value(&self.items[i][1]);
+                self.items[i][1] = decrypt_value(&self.items[i][1], self.key);
             }
             None => (),
         };
@@ -74,7 +76,7 @@ impl StatefulPasswordTable {
                     panic!("Error copying to clipboard: {}", error);
                 }
             } else {
-                if let Err(error) = copy_to_clipboard(&decrypt_value(&self.items[i][1])) {
+                if let Err(error) = copy_to_clipboard(&decrypt_value(&self.items[i][1], self.key)) {
                     panic!("Error copying to clipboard: {}", error);
                 }
             }

@@ -4,9 +4,8 @@ use std::error::Error;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-pub fn build_table_rows(
-    mut map: HashMap<String, String>,
-) -> Result<Vec<Vec<String>>, Box<dyn Error>> {
+pub fn build_table_rows(mut map: HashMap<String, String>)
+                        -> Result<Vec<Vec<String>>, Box<dyn Error>> {
     let mut vec_of_vecs = map
         .iter_mut()
         .map(|(key, value)| vec![key.to_string(), value.to_string()])
@@ -35,10 +34,10 @@ pub fn copy_to_clipboard(string_to_copy: &str) -> Result<(), Box<dyn Error>> {
 }
 
 #[inline]
-pub fn decrypt_value(string: &str) -> String {
+pub fn decrypt_value(string: &str, key: u8) -> String {
     string
         .chars()
-        .map(|ch| 6 ^ ch as u8)
+        .map(|ch| key ^ ch as u8)
         .map(|d| d as char)
         .collect()
 }
