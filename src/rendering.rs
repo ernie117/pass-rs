@@ -23,9 +23,9 @@ pub fn render_password_table(
     let row_style = Style::default().fg(Color::White);
 
     let mut table = StatefulPasswordTable::new();
+    table.items = build_table_rows(read_passwords()?)?;
 
     loop {
-        table.items = build_table_rows(read_passwords()?)?;
         let cfg = read_config()?;
         let mut highlight_colour = Color::Red;
         if table.encrypted {
@@ -101,6 +101,9 @@ pub fn render_password_table(
                 }
                 if key == Key::Char('y') {
                     table.copy();
+                }
+                if key == Key::Char('r') {
+                    table.items = build_table_rows(read_passwords()?)?;
                 }
             }
         }
