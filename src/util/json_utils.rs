@@ -3,11 +3,11 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
 use std::error::Error;
+use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Write};
 use tui::style::Modifier;
 use tui::widgets::BorderType;
-use std::fs;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RawConfigs {
@@ -18,7 +18,7 @@ pub struct RawConfigs {
 
 #[derive(Serialize, Deserialize)]
 pub struct PasswordsTemplate {
-    example_service: String
+    example_service: String,
 }
 
 impl Default for PasswordsTemplate {

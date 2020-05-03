@@ -4,9 +4,12 @@ use std::error::Error;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-pub fn build_table_rows(mut map: HashMap<String, String>) -> Result<Vec<Vec<String>>, Box<dyn Error>> {
+pub fn build_table_rows(
+    mut map: HashMap<String, String>,
+) -> Result<Vec<Vec<String>>, Box<dyn Error>> {
     let mut vec_of_vecs = map
-        .iter_mut().map(|(key, value)| vec![key.to_string(), value.to_string()])
+        .iter_mut()
+        .map(|(key, value)| vec![key.to_string(), value.to_string()])
         .collect::<Vec<Vec<String>>>();
 
     vec_of_vecs.sort();

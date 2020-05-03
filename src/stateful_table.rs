@@ -1,7 +1,7 @@
-use crate::util::utils::{copy_to_clipboard, decrypt_value, build_table_rows};
-use tui::widgets::TableState;
 use crate::util::json_utils::read_passwords;
+use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt_value};
 use std::error::Error;
+use tui::widgets::TableState;
 
 pub struct StatefulPasswordTable {
     pub(crate) state: TableState,
