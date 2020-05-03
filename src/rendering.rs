@@ -70,13 +70,14 @@ pub fn render_password_table(
                     x: (f.size().width / 2) - 35,
                     y: f.size().height - 12,
                     width: 70,
-                    height: 6,
+                    height: 7,
                 });
             let messages = [
                 "j/down to move down",
                 "k/up to move up",
                 "y to copy to clipboard",
                 "d to decrypt",
+                "r to refresh passwords",
             ]
             .iter()
             .map(|i| Text::raw(format!("{:^70}", i)));
@@ -103,7 +104,9 @@ pub fn render_password_table(
                     table.copy();
                 }
                 if key == Key::Char('r') {
-                    table.items = build_table_rows(read_passwords()?)?;
+                    if let Err(e) = table.re_encrypt() {
+                        println!("Error reading files: {}", e);
+                    }
                 }
             }
         }

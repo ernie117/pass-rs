@@ -1,5 +1,7 @@
-use crate::util::utils::{copy_to_clipboard, decrypt_value};
+use crate::util::utils::{copy_to_clipboard, decrypt_value, build_table_rows};
 use tui::widgets::TableState;
+use crate::util::json::read_passwords;
+use std::error::Error;
 
 pub struct StatefulPasswordTable {
     pub(crate) state: TableState,
@@ -77,5 +79,14 @@ impl StatefulPasswordTable {
                 }
             }
         }
+    }
+
+    pub fn re_encrypt(&mut self) -> Result<(), Box<dyn Error>> {
+        self.items = build_table_rows(read_passwords()?)?;
+        if self.decrypted {
+            self.decrypted = !self.decrypted;
+        }
+
+        Ok(())
     }
 }
