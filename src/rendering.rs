@@ -28,7 +28,7 @@ pub fn render_password_table(
     loop {
         let cfg = read_config()?;
         let mut highlight_colour = Color::Red;
-        if table.encrypted {
+        if table.decrypted {
             highlight_colour = Color::Green;
         }
 
