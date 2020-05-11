@@ -6,6 +6,7 @@ use std::error::Error;
 use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Write};
+use std::path::Path;
 use tui::style::Modifier;
 use tui::widgets::BorderType;
 
@@ -58,7 +59,11 @@ impl Default for CursesConfigs {
 
 pub fn read_passwords() -> Result<HashMap<String, String>, Box<dyn Error>> {
     let bufreader = read_json_file("passwords")?;
-    let map: HashMap<String, String> = serde_json::from_reader(bufreader)?;
+    let map: HashMap<String, String>;
+    match serde_json::from_reader(bufreader) {
+        Ok(s) => map = s,
+        Err(e) => panic!("Error serializing from reader: {}", e),
+    }
 
     Ok(map)
 }
@@ -72,27 +77,11 @@ pub fn read_config() -> Result<CursesConfigs, Box<dyn Error>> {
 }
 
 pub fn read_json_file(path: &str) -> Result<BufReader<File>, Box<dyn Error>> {
-    let full_path = home_dir().unwrap().into_os_string().into_string().unwrap()
-        + "/.passcurses/"
-        + path
-        + ".json";
-    let clone_path = full_path.clone();
-    let mut file = OpenOptions::new()
+    let full_path = format!("{}/{}.json", get_home_dir()?, path);
+    let file = OpenOptions::new()
         .read(true)
         .write(true)
-        .create(true)
-        .open(full_path)?;
-    let metadata = fs::metadata(clone_path)?;
-
-    if metadata.len() == 0 {
-        if path == "config" {
-            let default_json_config = serde_json::to_string_pretty(&RawConfigs::default())?;
-            file.write_all(default_json_config.as_bytes())?;
-        } else if path == "passwords" {
-            let passwords_template = serde_json::to_string_pretty(&PasswordsTemplate::default())?;
-            file.write_all(passwords_template.as_bytes())?;
-        }
-    }
+        .open(&full_path)?;
 
     let bufreader = BufReader::new(file);
 
@@ -137,4 +126,53 @@ fn map_configs(raw_config: RawConfigs) -> CursesConfigs {
     };
 
     cfg
+}
+
+pub fn check_directories_and_files() -> Result<(), Box<dyn Error>> {
+    check_directory_exists()?;
+    check_files()?;
+
+    Ok(())
+}
+
+fn check_directory_exists() -> Result<(), Box<dyn Error>> {
+    if !Path::new(&get_home_dir()?).exists() {
+        match fs::create_dir(get_home_dir()?) {
+            Ok(_s) => {},
+            Err(e) => panic!("Could not create passcurses directory: {}", e),
+        }
+    }
+
+    Ok(())
+}
+
+fn check_files() -> Result<(), Box<dyn Error>> {
+    let passwords_path = format!("{}/{}.json", &get_home_dir()?, "passwords");
+    if !Path::new(&passwords_path).exists() {
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(&passwords_path)?;
+
+        let passwords_template = serde_json::to_string_pretty(&PasswordsTemplate::default())?;
+        file.write_all(passwords_template.as_bytes())?;
+    }
+    let config_path = format!("{}/{}.json", &get_home_dir()?, "config");
+    if !Path::new(&config_path).exists() {
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(&config_path)?;
+
+        let default_json_config = serde_json::to_string_pretty(&RawConfigs::default())?;
+        file.write_all(default_json_config.as_bytes())?;
+    }
+
+    Ok(())
+}
+
+fn get_home_dir() -> Result<String, Box<dyn Error>> {
+    Ok(home_dir().unwrap().into_os_string().into_string().unwrap() + "/.passcurses")
 }
