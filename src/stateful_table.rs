@@ -3,11 +3,18 @@ use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt_value};
 use std::error::Error;
 use tui::widgets::TableState;
 
+pub enum InputMode {
+    Normal,
+    Insert,
+}
+
 pub struct StatefulPasswordTable {
     pub(crate) state: TableState,
     pub(crate) items: Vec<Vec<String>>,
     pub(crate) decrypted: bool,
-    pub(crate) key: u8
+    pub(crate) key: u8,
+    pub(crate) input: String,
+    pub(crate) input_mode: InputMode,
 }
 
 impl StatefulPasswordTable {
@@ -16,7 +23,9 @@ impl StatefulPasswordTable {
             state: TableState::default(),
             items: Vec::new(),
             decrypted: false,
-            key
+            key,
+            input: String::new(),
+            input_mode: InputMode::Normal,
         }
     }
     pub fn next(&mut self) {
