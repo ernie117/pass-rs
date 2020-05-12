@@ -21,8 +21,10 @@ use std::fs::OpenOptions;
 use std::io;
 use std::slice::Iter;
 
+type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>;
+
 pub fn render_password_table(
-    mut terminal: Terminal<TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>>,
+    mut terminal: Terminal<Backend>,
     key: u8,
 ) -> Result<(), Box<dyn Error>> {
     let mut events = Events::new();
@@ -34,37 +36,21 @@ pub fn render_password_table(
     let mut pwd_input: Vec<String> = Vec::new();
 
     loop {
+        // Re-reading the config in the loop allows for live editing of colours/style/etc.
         let cfg = read_config()?;
-        let mut highlight_colour = Color::Red;
-        if table.decrypted {
-            highlight_colour = Color::Green;
-        }
+
+        let highlight_colour= if table.decrypted {
+            Color::Green
+        } else {
+            Color::Red
+        };
 
         terminal.draw(|mut f| {
             // Draw table
             draw_table(&mut table.state, &table.items, cfg, &mut f, highlight_colour);
 
             // Draw help messages
-            let rects_2 = Layout::default()
-                .constraints([Constraint::Percentage(100)].as_ref())
-                .split(Rect {
-                    x: (f.size().width / 2) - 35,
-                    y: f.size().height - 12,
-                    width: 70,
-                    height: 7,
-                });
-            let messages = [
-                "j/down to move down",
-                "k/up to move up",
-                "y to copy to clipboard",
-                "d to decrypt",
-                "r to refresh passwords",
-            ]
-                .iter()
-                .map(|i| Text::raw(format!("{:^70}", i)));
-            let help =
-                List::new(messages).block(Block::default().borders(Borders::ALL).title("Help"));
-            f.render_widget(help, rects_2[0]);
+            draw_help_window(&mut f);
 
             // Render the input box to enter a new password
             if render_add_password {
@@ -183,7 +169,7 @@ pub fn render_password_table(
     Ok(())
 }
 
-fn draw_table(table_state: &mut TableState, table_items: &Vec<Vec<String>>, cfg: CursesConfigs, f: &mut Frame<TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>>, highlight_colour: Color) {
+fn draw_table(table_state: &mut TableState, table_items: &Vec<Vec<String>>, cfg: CursesConfigs, f: &mut Frame<Backend>, highlight_colour: Color) {
     let row_style = Style::default().fg(Color::White);
     let rects = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
@@ -212,4 +198,27 @@ fn draw_table(table_state: &mut TableState, table_items: &Vec<Vec<String>>, cfg:
         .style(Style::default().fg(Color::White))
         .column_spacing(1);
     f.render_stateful_widget(t, rects[0], table_state);
+}
+
+fn draw_help_window(f: &mut Frame<Backend>) {
+    let rects_2 = Layout::default()
+        .constraints([Constraint::Percentage(100)].as_ref())
+        .split(Rect {
+            x: (f.size().width / 2) - 35,
+            y: f.size().height - 12,
+            width: 70,
+            height: 7,
+        });
+    let messages = [
+        "j/down to move down",
+        "k/up to move up",
+        "y to copy to clipboard",
+        "d to decrypt",
+        "r to refresh passwords",
+    ]
+        .iter()
+        .map(|i| Text::raw(format!("{:^70}", i)));
+    let help =
+        List::new(messages).block(Block::default().borders(Borders::ALL).title("Help"));
+    f.render_widget(help, rects_2[0]);
 }
