@@ -10,6 +10,7 @@ use tui::Terminal;
 
 use crate::rendering::render_password_table;
 use crate::util::json_utils::check_directories_and_files;
+use crate::util::utils::copy_to_clipboard;
 
 mod rendering;
 mod stateful_table;

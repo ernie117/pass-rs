@@ -16,16 +16,24 @@ pub fn build_table_rows(
   Ok(vec_of_vecs)
 }
 
-#[inline]
 pub fn copy_to_clipboard(string_to_copy: &str) -> Result<(), Box<dyn Error>> {
-  let process = Command::new("xclip")
-    .arg("-selection")
-    .arg("clipboard")
-    .stdin(Stdio::piped())
-    .spawn()?
-    .stdin
-    .unwrap()
-    .write(string_to_copy.as_bytes());
+  let process = if cfg!(target_os = "macos") {
+    Command::new("pbcopy")
+      .stdin(Stdio::piped())
+      .spawn()?
+      .stdin
+      .unwrap()
+      .write(string_to_copy.as_bytes())
+  } else {
+    Command::new("xclip")
+      .arg("-selection")
+      .arg("clipboard")
+      .stdin(Stdio::piped())
+      .spawn()?
+      .stdin
+      .unwrap()
+      .write(string_to_copy.as_bytes())
+  };
 
   if let Err(e) = process {
     panic!("Encountered error: {}", e);
