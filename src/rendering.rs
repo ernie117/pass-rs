@@ -71,7 +71,7 @@ pub fn render_password_table(
           .split(f.size());
 
         let title = match table.input_mode {
-          InputMode::Normal => "Press q to exit, press i to enter service/password",
+          InputMode::Normal => "Press 'q' to close input, press 'i' to enter service/password",
           InputMode::Insert => "Type service and password separated by ':'",
         };
         let text = [Text::raw(&table.input)];
@@ -83,7 +83,6 @@ pub fn render_password_table(
     })?;
 
     if render_add_password {
-      write!(terminal.backend_mut(), "{}", Goto(4 as u16, 5))?;
       // stdout is buffered, flush it to see the effect immediately when hitting backspace
       io::stdout().flush().ok();
 
