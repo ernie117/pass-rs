@@ -5,31 +5,32 @@ use termion::raw::RawTerminal;
 use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::style::{Color, Style};
-use tui::Terminal;
+use tui::{Terminal, Frame};
 
 use crate::stateful_table::{StatefulPasswordTable, InputMode};
 use crate::util::event::{Event, Events};
-use crate::util::json_utils::{read_config, read_passwords};
+use crate::util::json_utils::{read_config, read_passwords, CursesConfigs};
 use crate::util::utils::build_table_rows;
 use termion::event::Key;
 use termion::input::MouseTerminal;
 use tui::layout::{Constraint, Layout, Rect, Direction};
-use tui::widgets::{Block, Borders, List, Row, Table, Text, Paragraph};
+use tui::widgets::{Block, Borders, List, Row, Table, Text, Paragraph, TableState};
 use termion::cursor::Goto;
 use std::io::Read;
 use std::fs::OpenOptions;
 use std::io;
+use std::slice::Iter;
 
 pub fn render_password_table(
     mut terminal: Terminal<TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>>,
     key: u8,
 ) -> Result<(), Box<dyn Error>> {
     let mut events = Events::new();
-    let row_style = Style::default().fg(Color::White);
 
     let mut table = StatefulPasswordTable::new(key);
     table.items = build_table_rows(read_passwords()?)?;
     let mut render_add_password = false;
+    let mut coming_from_add = false;
     let mut pwd_input: Vec<String> = Vec::new();
 
     loop {
@@ -40,37 +41,10 @@ pub fn render_password_table(
         }
 
         terminal.draw(|mut f| {
-            // Layout and rendering for password table
-            let rects = Layout::default()
-                .constraints([Constraint::Percentage(100)].as_ref())
-                .split(Rect {
-                    x: (f.size().width / 2) - 35,
-                    y: (f.size().height / 2) - 12,
-                    width: 70,
-                    height: 24,
-                });
+            // Draw table
+            draw_table(&mut table.state, &table.items, cfg, &mut f, highlight_colour);
 
-            let rows = table
-                .items
-                .iter()
-                .map(|i| Row::StyledData(i.into_iter(), row_style));
-            let t = Table::new(["Service", "Password"].iter(), rows)
-                .block(
-                    Block::default()
-                        .title("Passwords")
-                        .title_style(Style::default().modifier(cfg.title_style))
-                        .borders(Borders::ALL)
-                        .border_type(cfg.border_type)
-                        .border_style(Style::default().modifier(cfg.border_style)),
-                )
-                .header_style(Style::default().fg(Color::Yellow))
-                .highlight_style(Style::default().fg(Color::Black).bg(highlight_colour))
-                .widths(&[Constraint::Length(35), Constraint::Length(35)])
-                .style(Style::default().fg(Color::White))
-                .column_spacing(1);
-            f.render_stateful_widget(t, rects[0], &mut table.state);
-
-            // Layout and rendering for help messages
+            // Draw help messages
             let rects_2 = Layout::default()
                 .constraints([Constraint::Percentage(100)].as_ref())
                 .split(Rect {
@@ -137,6 +111,8 @@ pub fn render_password_table(
                         }
                         Key::Char('q') => {
                             render_add_password = false;
+                            coming_from_add = true;
+                            break;
                         }
                         _ => {}
                     },
@@ -160,18 +136,13 @@ pub fn render_password_table(
                 _ => {}
             }
 
-            if render_add_password {
-                continue;
-            }
+            continue;
         }
 
         match events.next()? {
             Event::Input(key) => match key {
                 Key::Char('c') => {
                     render_add_password = !render_add_password;
-                }
-                Key::Char('q') => {
-                    break;
                 }
                 Key::Char('j') => {
                     table.next();
@@ -182,7 +153,7 @@ pub fn render_password_table(
                 Key::Char('k') => {
                     table.previous();
                 }
-                Key::Down => {
+                Key::Up => {
                     table.previous();
                 }
                 Key::Char('d') => {
@@ -191,10 +162,13 @@ pub fn render_password_table(
                 Key::Char('y') => {
                     table.copy();
                 }
-                Key::Char('r') =>  {
+                Key::Char('r') => {
                     if let Err(e) = table.re_encrypt() {
                         panic!("Error reading files: {}", e);
                     }
+                }
+                Key::Char('q') => {
+                    break;
                 }
                 _ => {}
             }
@@ -202,5 +176,40 @@ pub fn render_password_table(
         }
     }
 
+    if coming_from_add {
+        render_password_table(terminal, key);
+    }
+
     Ok(())
+}
+
+fn draw_table(table_state: &mut TableState, table_items: &Vec<Vec<String>>, cfg: CursesConfigs, f: &mut Frame<TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>>, highlight_colour: Color) {
+    let row_style = Style::default().fg(Color::White);
+    let rects = Layout::default()
+        .constraints([Constraint::Percentage(100)].as_ref())
+        .split(Rect {
+            x: (f.size().width / 2) - 35,
+            y: (f.size().height / 2) - 12,
+            width: 70,
+            height: 24,
+        });
+
+    let rows = table_items
+        .iter()
+        .map(|i| Row::StyledData(i.into_iter(), row_style));
+    let t = Table::new(["Service", "Password"].iter(), rows)
+        .block(
+            Block::default()
+                .title("Passwords")
+                .title_style(Style::default().modifier(cfg.title_style))
+                .borders(Borders::ALL)
+                .border_type(cfg.border_type)
+                .border_style(Style::default().modifier(cfg.border_style)),
+        )
+        .header_style(Style::default().fg(Color::Yellow))
+        .highlight_style(Style::default().fg(Color::Black).bg(highlight_colour))
+        .widths(&[Constraint::Length(35), Constraint::Length(35)])
+        .style(Style::default().fg(Color::White))
+        .column_spacing(1);
+    f.render_stateful_widget(t, rects[0], table_state);
 }
