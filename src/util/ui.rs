@@ -11,6 +11,16 @@ use tui::Frame;
 
 pub type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>;
 
+static BUTTONS: [&str; 6] = ["j/down", "k/up", "y", "d", "r", "c"];
+static EFFECTS: [&str; 6] = [
+  "move down",
+  "move up",
+  "copy the password",
+  "decrypt the password",
+  "refresh passwords",
+  "create new password",
+];
+
 pub fn draw_table(
   table_state: &mut TableState,
   table_items: &Vec<Vec<String>>,
@@ -60,23 +70,19 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
       height: 8,
     });
 
-  let zipped_iterator = ["j/down", "k/up", "y", "d", "r", "c"].iter().zip(
-    [
-      "move down",
-      "move up",
-      "copy the password",
-      "decrypt password",
-      "refresh passwords",
-      "create a new password",
-    ]
-    .iter(),
-  );
+  let zipped_help = BUTTONS.iter().zip(EFFECTS.iter());
 
   let mut messages = Vec::new();
-  for (button, effect) in zipped_iterator {
-    let spaced_btn = format!("{} ", button);
-    let main_str = format!(" {:.<40} {}", spaced_btn, effect);
-    messages.push(Text::raw(format!("  {:<70}", main_str)));
+  for (button, effect) in zipped_help {
+    let spacing = (40 - effect.len()) - button.len();
+    let main_str = format!(
+      "{} {:.<spacing$} {}",
+      button,
+      ".",
+      effect,
+      spacing = spacing
+    );
+    messages.push(Text::raw(format!("{:^69}", main_str)));
   }
 
   let help =
