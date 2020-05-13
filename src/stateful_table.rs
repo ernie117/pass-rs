@@ -1,12 +1,8 @@
 use crate::util::json_utils::read_passwords;
+use crate::util::ui::{InputMode, RenderMode};
 use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt_value};
 use std::error::Error;
 use tui::widgets::TableState;
-
-pub enum InputMode {
-  Normal,
-  Insert,
-}
 
 pub struct StatefulPasswordTable {
   pub(crate) state: TableState,
@@ -15,6 +11,8 @@ pub struct StatefulPasswordTable {
   pub(crate) key: u8,
   pub(crate) input: String,
   pub(crate) input_mode: InputMode,
+  pub(crate) render_mode: RenderMode,
+  pub(crate) active: bool,
 }
 
 impl StatefulPasswordTable {
@@ -26,6 +24,8 @@ impl StatefulPasswordTable {
       key,
       input: String::new(),
       input_mode: InputMode::Normal,
+      render_mode: RenderMode::Normal,
+      active: true,
     }
   }
   pub fn next(&mut self) {
