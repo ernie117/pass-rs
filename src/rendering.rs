@@ -16,7 +16,7 @@ pub fn render_password_table(
   key: u8,
 ) -> Result<(), Box<dyn Error>> {
 
-  let mut events = Events::new();
+  let events = Events::new();
   let mut table = StatefulPasswordTable::new(key);
   let mut pwd_input: Vec<String> = Vec::new();
   table.items = build_table_rows(read_passwords()?)?;
@@ -67,7 +67,7 @@ pub fn render_password_table(
       },
       RenderMode::NewPassword => match events.next()? {
         Event::Input(key) => {
-          inputs::add_password_input_handler(&mut table, key, &mut pwd_input, &mut events);
+          inputs::add_password_input_handler(&mut table, key, &mut pwd_input);
         }
         _ => {}
       },

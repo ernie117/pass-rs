@@ -22,20 +22,21 @@ pub enum RenderMode {
   NewPassword,
 }
 
-static BUTTONS: [&str; 6] = ["j/down", "k/up", "y", "d", "r", "c"];
-static EFFECTS: [&str; 6] = [
+static BUTTONS: [&str; 7] = ["j/down", "k/up", "y", "d", "r", "c", "q"];
+static EFFECTS: [&str; 7] = [
   "move down",
   "move up",
   "copy password",
   "decrypt the password",
   "refresh passwords",
   "create new password (NOT WORKING)",
+  "quit",
 ];
 
 static BOX_WIDTH: u16 = 70;
 static BOX_HEIGHT: u16 = 24;
 
-static NORMAL_MODE_TITLE: &str = "Press 'q' to close input, press 'i' to enter service/password";
+static NORMAL_MODE_TITLE: &str = "Press Ctrl+c to close input, press 'i' to enter service/password";
 static INSERT_MODE_TITLE: &str = "Type service and password separated by ':'";
 
 static HELP_BOX_HEIGHT: u16 = EFFECTS.len() as u16 + 2;
