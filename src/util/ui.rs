@@ -81,7 +81,7 @@ pub fn draw_table(
     .constraints([Constraint::Percentage(100)].as_ref())
     .split(Rect {
       x: (f.size().width / 2) - BOX_WIDTH / 2,
-      y: f.size().height - 12,
+      y: ((f.size().height / 2) - BOX_HEIGHT / 2) + BOX_HEIGHT,
       width: BOX_WIDTH,
       height: 3,
     });
@@ -102,7 +102,7 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
     .constraints([Constraint::Percentage(100)].as_ref())
     .split(Rect {
       x: (f.size().width / 2) - BOX_WIDTH / 2,
-      y: f.size().height - (BOX_HEIGHT / 2),
+      y: ((f.size().height / 2) - BOX_HEIGHT / 2) + BOX_HEIGHT,
       width: BOX_WIDTH,
       height: HELP_BOX_HEIGHT,
     });
