@@ -59,12 +59,14 @@ pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
       Key::Ctrl('c') => {
         table.render_mode = RenderMode::Normal;
         table.input_mode = InputMode::Normal;
+        table.input.clear();
       }
       _ => {}
     },
     InputMode::NewService => match key {
       Key::Ctrl('c') => {
         table.input_mode = InputMode::Normal;
+        table.input.clear();
       }
       Key::Char('\n') => {
         table.new_service.push_str(&table.input);
@@ -73,12 +75,16 @@ pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
       }
       Key::Char(c) => {
         table.input.push(c);
-      }
+      },
+      Key::Backspace => {
+        table.input.pop();
+      },
       _ => {}
     },
     InputMode::NewPassword => match key {
       Key::Ctrl('c') => {
         table.input_mode = InputMode::Normal;
+        table.input.clear();
       }
       Key::Char('\n') => {
         table.new_password.push_str(&table.input);
@@ -87,7 +93,10 @@ pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
       }
       Key::Char(c) => {
         table.input.push(c);
-      }
+      },
+      Key::Backspace => {
+        table.input.pop();
+      },
       _ => {}
     },
   }
