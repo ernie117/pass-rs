@@ -1,6 +1,5 @@
 use std::error::Error;
 
-use tui::style::Color;
 use tui::Terminal;
 
 use crate::stateful_table::StatefulPasswordTable;
@@ -12,23 +11,22 @@ use crate::util::ui::{Backend, RenderMode};
 use crate::util::utils::build_table_rows;
 
 pub fn render_password_table(
-  mut terminal: Terminal<Backend>,
+  terminal: &mut Terminal<Backend>,
   key: u8,
 ) -> Result<(), Box<dyn Error>> {
-
   let events = Events::new();
   let mut table = StatefulPasswordTable::new(key);
   let mut pwd_input: Vec<String> = Vec::new();
   table.items = build_table_rows(read_passwords()?)?;
 
-  loop {
-    // Re-reading the config in the loop allows for live editing of colours/style/etc.
-    let cfg = read_config()?;
-
-    let highlight_colour = if table.decrypted {
-      Color::Green
-    } else {
-      Color::Red
+  while table.active {
+    // Reading the config in the loop allows for live editing of colours/style/etc.
+    let cfg = match read_config() {
+      Ok(c) => c,
+      Err(e) => {
+        terminal.show_cursor()?;
+        panic!("Unable to read config file: {}", e);
+      }
     };
 
     terminal.draw(|mut f| {
@@ -37,18 +35,18 @@ pub fn render_password_table(
           ui::draw_table(
             &mut table.state,
             &table.items,
-            cfg,
+            &cfg,
             &mut f,
-            highlight_colour,
+            &table.decrypted,
           );
         }
         RenderMode::WithHelp => {
           ui::draw_table(
             &mut table.state,
             &table.items,
-            cfg,
+            &cfg,
             &mut f,
-            highlight_colour,
+            &table.decrypted,
           );
           ui::draw_help_window(&mut f);
         }
@@ -71,10 +69,6 @@ pub fn render_password_table(
         }
         _ => {}
       },
-    }
-
-    if !table.active {
-      break;
     }
   }
 

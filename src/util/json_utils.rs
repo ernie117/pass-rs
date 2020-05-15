@@ -1,3 +1,4 @@
+use crate::util::configs::{CursesConfigs, RawConfigs};
 use dirs::home_dir;
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -7,52 +8,22 @@ use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Write};
 use std::path::Path;
-use tui::style::Modifier;
-use tui::widgets::BorderType;
-
-#[derive(Serialize, Deserialize, Debug)]
-struct RawConfigs {
-  border_type: String,
-  border_style: String,
-  title_style: String,
-}
 
 #[derive(Serialize, Deserialize)]
 struct PasswordsTemplate {
-  example_service: String,
+  example_service1: String,
+  example_service2: String,
+  example_service3: String,
+  example_service4: String,
 }
 
 impl Default for PasswordsTemplate {
   fn default() -> PasswordsTemplate {
     PasswordsTemplate {
-      example_service: "example_password".to_string(),
-    }
-  }
-}
-
-impl Default for RawConfigs {
-  fn default() -> RawConfigs {
-    RawConfigs {
-      border_type: "rounded".to_string(),
-      border_style: "bold".to_string(),
-      title_style: "italic".to_string(),
-    }
-  }
-}
-
-#[derive(Debug)]
-pub struct CursesConfigs {
-  pub border_type: BorderType,
-  pub border_style: Modifier,
-  pub title_style: Modifier,
-}
-
-impl Default for CursesConfigs {
-  fn default() -> CursesConfigs {
-    CursesConfigs {
-      border_type: BorderType::Rounded,
-      border_style: Modifier::BOLD,
-      title_style: Modifier::ITALIC,
+      example_service1: "example_password1".to_string(),
+      example_service2: "example_password2".to_string(),
+      example_service3: "example_password3".to_string(),
+      example_service4: "example_password4".to_string(),
     }
   }
 }
@@ -71,7 +42,10 @@ pub fn read_passwords() -> Result<HashMap<String, String>, Box<dyn Error>> {
 pub fn read_config() -> Result<CursesConfigs, Box<dyn Error>> {
   let bufreader = read_json_file("config")?;
   let raw_config: RawConfigs = serde_json::from_reader(bufreader)?;
-  let cfg: CursesConfigs = map_configs(raw_config);
+  let mut cfg = CursesConfigs::default();
+  cfg.set_border_type(raw_config.border_type);
+  cfg.set_border_style(raw_config.border_style);
+  cfg.set_title_style(raw_config.title_style);
 
   Ok(cfg)
 }
@@ -83,46 +57,6 @@ pub fn read_json_file(path: &str) -> Result<BufReader<File>, Box<dyn Error>> {
   let bufreader = BufReader::new(file);
 
   Ok(bufreader)
-}
-
-fn map_configs(raw_config: RawConfigs) -> CursesConfigs {
-  let mut cfg: CursesConfigs = CursesConfigs::default();
-
-  cfg.border_type = match raw_config.border_type.to_ascii_lowercase().as_ref() {
-    "rounded" => BorderType::Rounded,
-    "plain" => BorderType::Plain,
-    "double" => BorderType::Double,
-    "thick" => BorderType::Thick,
-    _ => cfg.border_type,
-  };
-
-  cfg.border_style = match raw_config.border_style.to_ascii_lowercase().as_ref() {
-    "bold" => Modifier::BOLD,
-    "dim" => Modifier::DIM,
-    "italic" => Modifier::ITALIC,
-    "underlined" => Modifier::UNDERLINED,
-    "slow_blink" => Modifier::SLOW_BLINK,
-    "rapid_blink" => Modifier::RAPID_BLINK,
-    "reversed" => Modifier::REVERSED,
-    "hidden" => Modifier::HIDDEN,
-    "crossed_out" => Modifier::CROSSED_OUT,
-    _ => cfg.border_style,
-  };
-
-  cfg.title_style = match raw_config.title_style.to_ascii_lowercase().as_ref() {
-    "bold" => Modifier::BOLD,
-    "dim" => Modifier::DIM,
-    "italic" => Modifier::ITALIC,
-    "underlined" => Modifier::UNDERLINED,
-    "slow_blink" => Modifier::SLOW_BLINK,
-    "rapid_blink" => Modifier::RAPID_BLINK,
-    "reversed" => Modifier::REVERSED,
-    "hidden" => Modifier::HIDDEN,
-    "crossed_out" => Modifier::CROSSED_OUT,
-    _ => cfg.border_style,
-  };
-
-  cfg
 }
 
 pub fn check_directories_and_files() -> Result<(), Box<dyn Error>> {

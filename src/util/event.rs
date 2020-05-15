@@ -76,5 +76,4 @@ impl Events {
   pub fn next(&self) -> Result<Event<Key>, mpsc::RecvError> {
     self.rx.recv()
   }
-
 }

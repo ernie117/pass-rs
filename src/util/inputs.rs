@@ -1,25 +1,24 @@
 use crate::stateful_table::StatefulPasswordTable;
-use crate::util::ui::{InputMode, RenderMode};
+use crate::util::ui::RenderMode;
 use std::io::Write;
 use termion::event::Key;
 
 use std::io;
+
+pub enum InputMode {
+  Normal,
+  Insert,
+}
 
 pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key) {
   match key {
     Key::Char('c') => {
       table.render_mode = RenderMode::NewPassword;
     }
-    Key::Char('j') => {
+    Key::Char('j') | Key::Down => {
       table.next();
     }
-    Key::Down => {
-      table.next();
-    }
-    Key::Char('k') => {
-      table.previous();
-    }
-    Key::Up => {
+    Key::Char('k') | Key::Up => {
       table.previous();
     }
     Key::Char('d') => {
@@ -52,7 +51,6 @@ pub fn add_password_input_handler(
   key: Key,
   pwd_input: &mut Vec<String>,
 ) {
-  // stdout is buffered, flush it to see the effect immediately when hitting backspace
   io::stdout().flush().ok();
 
   match table.input_mode {

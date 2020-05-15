@@ -1,20 +1,17 @@
-use crate::util::json_utils::CursesConfigs;
+use crate::util::banner::BANNER;
+use crate::util::configs::CursesConfigs;
+use crate::util::inputs::InputMode;
 use std::io::Stdout;
 use termion::input::MouseTerminal;
 use termion::raw::RawTerminal;
 use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Style};
+use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders, List, Paragraph, Row, Table, TableState, Text};
 use tui::Frame;
 
 pub type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>;
-
-pub enum InputMode {
-  Normal,
-  Insert,
-}
 
 pub enum RenderMode {
   Normal,
@@ -37,18 +34,55 @@ static BOX_WIDTH: u16 = 70;
 static BOX_HEIGHT: u16 = 24;
 
 static NORMAL_MODE_TITLE: &str = "Press Ctrl+c to close input, press 'i' to enter service/password";
-static INSERT_MODE_TITLE: &str = "Type service and password separated by ':'";
+static INSERT_MODE_TITLE: &str = "Enter a service. Press Esc to go back";
 
 static HELP_BOX_HEIGHT: u16 = EFFECTS.len() as u16 + 2;
 static HELP_MSG_SPACING: usize = 40;
 
+static BANNER_LEN: u16 = 70;
+static BANNER_HEIGHT: u16 = 12;
+
+/// Draws the main view including the password table, banner and help prompt.
 pub fn draw_table(
   table_state: &mut TableState,
   table_items: &Vec<Vec<String>>,
-  cfg: CursesConfigs,
+  cfg: &CursesConfigs,
   f: &mut Frame<Backend>,
-  highlight_colour: Color,
+  table_decrypted: &bool,
 ) {
+  let highlight_colour = if *table_decrypted {
+    Color::Green
+  } else {
+    Color::Red
+  };
+
+  let chunks = Layout::default()
+    .direction(Direction::Vertical)
+    .margin(2)
+    .constraints(
+      [
+        Constraint::Length(1),
+        Constraint::Length(12),
+        Constraint::Min(1),
+      ]
+      .as_ref(),
+    )
+    .split(Rect {
+      x: (f.size().width / 2) - BOX_WIDTH / 2,
+      y: (f.size().height / 2) - BOX_HEIGHT,
+      width: BANNER_LEN,
+      height: BANNER_HEIGHT,
+    });
+
+  let banner = [Text::styled(
+    BANNER,
+    Style::default()
+      .fg(highlight_colour)
+      .modifier(Modifier::BOLD),
+  )];
+  let banner_box = Paragraph::new(banner.iter()).block(Block::default().borders(Borders::NONE));
+  f.render_widget(banner_box, chunks[1]);
+
   let row_style = Style::default().fg(Color::White);
   let rects = Layout::default()
     .constraints([Constraint::Percentage(100)].as_ref())
@@ -78,6 +112,8 @@ pub fn draw_table(
     .style(Style::default().fg(Color::White))
     .column_spacing(1);
 
+  f.render_stateful_widget(t, rects[0], table_state);
+
   let rects_2 = Layout::default()
     .constraints([Constraint::Percentage(100)].as_ref())
     .split(Rect {
@@ -88,16 +124,15 @@ pub fn draw_table(
     });
 
   let text = [Text::raw("? for help")];
-  let block = Block::default()
-      .borders(Borders::NONE);
+  let block = Block::default().borders(Borders::NONE);
   let paragraph = Paragraph::new(text.iter())
-      .block(block)
-      .alignment(Alignment::Left);
+    .block(block)
+    .alignment(Alignment::Left);
 
-  f.render_stateful_widget(t, rects[0], table_state);
   f.render_widget(paragraph, rects_2[0]);
 }
 
+/// Draws the help window.
 pub fn draw_help_window(f: &mut Frame<Backend>) {
   let rects = Layout::default()
     .constraints([Constraint::Percentage(100)].as_ref())
@@ -108,6 +143,7 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
       height: HELP_BOX_HEIGHT,
     });
 
+  // TODO: Is there a way to do this statically?
   let zipped_help = BUTTONS.iter().zip(EFFECTS.iter());
 
   let mut messages = Vec::new();
@@ -129,6 +165,7 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
   f.render_widget(help, rects[0]);
 }
 
+/// Draws the input box for adding a new password.
 pub fn draw_add_password(
   f: &mut Frame<Backend>,
   table_input_mode: &InputMode,

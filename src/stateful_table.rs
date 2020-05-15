@@ -1,5 +1,6 @@
+use crate::util::inputs::InputMode;
 use crate::util::json_utils::read_passwords;
-use crate::util::ui::{InputMode, RenderMode};
+use crate::util::ui::RenderMode;
 use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt_value};
 use std::error::Error;
 use tui::widgets::TableState;
