@@ -94,7 +94,7 @@ impl StatefulPasswordTable {
   }
 
   pub fn re_encrypt(&mut self) -> Result<(), Box<dyn Error>> {
-    self.items = build_table_rows(read_passwords()?)?;
+    self.items = build_table_rows(read_passwords()?);
     if self.decrypted {
       self.decrypted = !self.decrypted;
     }

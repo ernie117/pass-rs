@@ -6,9 +6,7 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 
 #[inline]
-pub fn build_table_rows(
-  mut map: HashMap<String, String>,
-) -> Result<Vec<Vec<String>>, Box<dyn Error>> {
+pub fn build_table_rows(mut map: HashMap<String, String>) -> Vec<Vec<String>> {
   let mut vec_of_vecs = map
     .iter_mut()
     .map(|(key, value)| vec![key.to_string(), value.to_string()])
@@ -16,31 +14,27 @@ pub fn build_table_rows(
 
   vec_of_vecs.sort();
 
-  Ok(vec_of_vecs)
+  vec_of_vecs
 }
 
 #[inline]
 pub fn copy_to_clipboard(string_to_copy: &str) -> Result<(), Box<dyn Error>> {
   let process = if cfg!(target_os = "macos") {
-    Command::new("pbcopy")
-      .stdin(Stdio::piped())
-      .spawn()?
-      .stdin
-      .unwrap()
-      .write(string_to_copy.as_bytes())
+    Command::new("pbcopy").stdin(Stdio::piped()).spawn()?
   } else {
     Command::new("xclip")
       .arg("-selection")
       .arg("clipboard")
       .stdin(Stdio::piped())
       .spawn()?
-      .stdin
-      .unwrap()
-      .write(string_to_copy.as_bytes())
   };
 
-  if let Err(e) = process {
-    panic!("Encountered error: {}", e);
+  if let Err(e) = process
+    .stdin
+    .ok_or("Couldn't unwrap stdin.")?
+    .write(string_to_copy.as_bytes())
+  {
+    println!("Couldn't copy to clipboard: {}", e);
   }
 
   Ok(())
@@ -68,12 +62,8 @@ pub fn verify_dev() -> bool {
   let final_password = encrypted_password.as_os_str().to_str().unwrap();
 
   if final_password.is_empty() {
-    return false
+    return false;
   }
 
-  argon2::verify_encoded(
-    final_password,
-    raw_password_bytes,
-  )
-  .unwrap()
+  argon2::verify_encoded(final_password, raw_password_bytes).unwrap()
 }

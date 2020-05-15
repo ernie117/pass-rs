@@ -17,7 +17,7 @@ pub fn render_password_table(
   let events = Events::new();
   let mut table = StatefulPasswordTable::new(key);
   let mut pwd_input: Vec<String> = Vec::new();
-  table.items = build_table_rows(read_passwords()?)?;
+  table.items = build_table_rows(read_passwords()?);
 
   while table.active {
     // Reading the config in the loop allows for live editing of colours/style/etc.
