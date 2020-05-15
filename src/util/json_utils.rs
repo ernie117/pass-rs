@@ -1,4 +1,5 @@
 use crate::util::configs::{CursesConfigs, RawConfigs};
+use crate::util::utils::decrypt_value;
 use dirs::home_dir;
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -57,6 +58,31 @@ pub fn read_json_file(path: &str) -> Result<BufReader<File>, Box<dyn Error>> {
   let bufreader = BufReader::new(file);
 
   Ok(bufreader)
+}
+
+pub fn write_new_password(
+  new_service: &str,
+  new_password: &str,
+  key: u8,
+) -> Result<(), Box<dyn Error>> {
+  let bufreader = read_json_file("passwords")?;
+  let mut map: HashMap<String, String> = match serde_json::from_reader(bufreader) {
+    Ok(s) => s,
+    Err(e) => panic!("Error serializing from reader: {}", e),
+  };
+
+  map.insert(
+    new_service.to_string(),
+    decrypt_value(new_password, key).to_string(),
+  );
+  let new_passwords = serde_json::to_string_pretty(&map)?;
+
+  let passwords_path = format!("{}/{}.json", &get_home_dir()?, "passwords");
+  let mut file = OpenOptions::new().write(true).open(&passwords_path)?;
+
+  file.write_all(new_passwords.as_bytes())?;
+
+  Ok(())
 }
 
 pub fn check_directories_and_files() -> Result<(), Box<dyn Error>> {

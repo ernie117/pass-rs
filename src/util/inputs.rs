@@ -7,7 +7,8 @@ use std::io;
 
 pub enum InputMode {
   Normal,
-  Insert,
+  NewService,
+  NewPassword,
 }
 
 pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key) {
@@ -32,6 +33,7 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
         RenderMode::Normal => RenderMode::WithHelp,
         RenderMode::WithHelp => RenderMode::Normal,
         RenderMode::NewPassword => RenderMode::NewPassword,
+        RenderMode::NewService => RenderMode::NewService,
       };
     }
     Key::Char('r') => {
@@ -46,17 +48,13 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
   }
 }
 
-pub fn add_password_input_handler(
-  table: &mut StatefulPasswordTable,
-  key: Key,
-  pwd_input: &mut Vec<String>,
-) {
+pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
   io::stdout().flush().ok();
 
   match table.input_mode {
     InputMode::Normal => match key {
       Key::Char('i') => {
-        table.input_mode = InputMode::Insert;
+        table.input_mode = InputMode::NewService;
       }
       Key::Ctrl('c') => {
         table.render_mode = RenderMode::Normal;
@@ -64,18 +62,31 @@ pub fn add_password_input_handler(
       }
       _ => {}
     },
-    InputMode::Insert => match key {
+    InputMode::NewService => match key {
+      Key::Ctrl('c') => {
+        table.input_mode = InputMode::Normal;
+      }
       Key::Char('\n') => {
-        pwd_input.push(table.input.drain(..).collect());
+        table.new_service.push_str(&table.input);
+        table.input.clear();
+        table.input_mode = InputMode::NewPassword;
       }
       Key::Char(c) => {
         table.input.push(c);
       }
-      Key::Backspace => {
-        table.input.pop();
-      }
-      Key::Esc => {
+      _ => {}
+    },
+    InputMode::NewPassword => match key {
+      Key::Ctrl('c') => {
         table.input_mode = InputMode::Normal;
+      }
+      Key::Char('\n') => {
+        table.new_password.push_str(&table.input);
+        table.input.clear();
+        table.input_mode = InputMode::Normal;
+      }
+      Key::Char(c) => {
+        table.input.push(c);
       }
       _ => {}
     },

@@ -14,6 +14,8 @@ pub struct StatefulPasswordTable {
   pub(crate) input_mode: InputMode,
   pub(crate) render_mode: RenderMode,
   pub(crate) active: bool,
+  pub(crate) new_service: String,
+  pub(crate) new_password: String,
 }
 
 impl StatefulPasswordTable {
@@ -27,6 +29,8 @@ impl StatefulPasswordTable {
       input_mode: InputMode::Normal,
       render_mode: RenderMode::Normal,
       active: true,
+      new_service: String::new(),
+      new_password: String::new(),
     }
   }
   pub fn next(&mut self) {

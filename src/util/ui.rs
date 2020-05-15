@@ -16,17 +16,19 @@ pub type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdo
 pub enum RenderMode {
   Normal,
   WithHelp,
+  NewService,
   NewPassword,
 }
 
-static BUTTONS: [&str; 7] = ["j/down", "k/up", "y", "d", "r", "c", "q"];
-static EFFECTS: [&str; 7] = [
+static BUTTONS: [&str; 8] = ["/down", "k/up", "y", "d", "r", "c", "d", "q"];
+static EFFECTS: [&str; 8] = [
   "move down",
   "move up",
   "copy password",
   "decrypt the password",
   "refresh passwords",
-  "create new password (NOT WORKING)",
+  "create new password",
+  "delete password (coming soon)",
   "quit",
 ];
 
@@ -34,7 +36,8 @@ static BOX_WIDTH: u16 = 70;
 static BOX_HEIGHT: u16 = 24;
 
 static NORMAL_MODE_TITLE: &str = "Press Ctrl+c to close input, press 'i' to enter service/password";
-static INSERT_MODE_TITLE: &str = "Enter a service. Press Esc to go back";
+static NEW_SERVICE_TITLE: &str = "Enter a new service. Press Ctrl+c to go back";
+static NEW_PASSWORD_TITLE: &str = "Enter a new password. Press Ctrl+c to go back";
 
 static HELP_BOX_HEIGHT: u16 = EFFECTS.len() as u16 + 2;
 static HELP_MSG_SPACING: usize = 40;
@@ -186,7 +189,8 @@ pub fn draw_add_password(
 
   let title = match table_input_mode {
     InputMode::Normal => NORMAL_MODE_TITLE,
-    InputMode::Insert => INSERT_MODE_TITLE,
+    InputMode::NewService => NEW_SERVICE_TITLE,
+    InputMode::NewPassword => NEW_PASSWORD_TITLE,
   };
   let text = [Text::raw(table_input)];
   let input = Paragraph::new(text.iter())
