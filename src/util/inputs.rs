@@ -107,8 +107,8 @@ pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
       Key::Esc => {
         table.input_mode = InputMode::Normal;
         table.render_mode = RenderMode::Normal;
-      },
-      _ => {},
+      }
+      _ => {}
     },
     _ => {}
   }
@@ -124,15 +124,17 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
       }
       Key::Char('\n') => {
         if table.input.is_empty() {
-            return;
+          return;
         }
         let result = delete_password(&table.input, table.key).unwrap();
-        if result { // Password existed.
+        if result {
+          // Password existed.
           table.input_mode = InputMode::PasswordDeleted;
           table.render_mode = RenderMode::PasswordDeleted;
           table.input.clear();
           table.re_encrypt().unwrap();
-        } else { // Password didn't exist.
+        } else {
+          // Password didn't exist.
           table.input_mode = InputMode::NoSuchPassword;
           table.render_mode = RenderMode::NoSuchPassword;
           table.input.clear();

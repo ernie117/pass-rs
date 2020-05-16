@@ -48,7 +48,7 @@ pub fn render_password_table(
         RenderMode::DeletePassword | RenderMode::PasswordDeleted | RenderMode::NoSuchPassword => {
           ui::draw_delete_password(&mut f, &table.render_mode, &table.input);
         }
-        _ => {},
+        _ => {}
       };
     })?;
 
@@ -71,15 +71,17 @@ pub fn render_password_table(
         }
         _ => {}
       },
-      RenderMode::PasswordDeleted | RenderMode::PasswordCreated | RenderMode::NoSuchPassword => match events.next()? {
-        Event::Input(key) => match key {
-          Key::Esc => {
-            table.render_mode = RenderMode::Normal;
-          }
+      RenderMode::PasswordDeleted | RenderMode::PasswordCreated | RenderMode::NoSuchPassword => {
+        match events.next()? {
+          Event::Input(key) => match key {
+            Key::Esc => {
+              table.render_mode = RenderMode::Normal;
+            }
+            _ => {}
+          },
           _ => {}
-        },
-        _ => {}
-      },
+        }
+      }
     }
 
     if !table.new_username.is_empty() && !table.new_password.is_empty() {

@@ -204,10 +204,23 @@ pub fn draw_add_password(
     RenderMode::PasswordCreated => PASSWORD_CREATED,
     _ => "",
   };
-  let text = [Text::styled(table_input, Style::default().fg(Color::Black).bg(Color::White))];
+  let text = [Text::styled(
+    table_input,
+    Style::default().fg(Color::Black).bg(Color::White),
+  )];
   let input = Paragraph::new(text.iter())
-    .style(Style::default().fg(Color::Black).bg(Color::Gray).modifier(Modifier::BOLD))
-    .block(Block::default().borders(Borders::ALL).title(title).style(Style::default()));
+    .style(
+      Style::default()
+        .fg(Color::Black)
+        .bg(Color::Gray)
+        .modifier(Modifier::BOLD),
+    )
+    .block(
+      Block::default()
+        .borders(Borders::ALL)
+        .title(title)
+        .style(Style::default()),
+    );
   f.render_widget(input, chunks[1]);
 }
 
@@ -241,9 +254,22 @@ pub fn draw_delete_password(
     RenderMode::NoSuchPassword => NO_SUCH_PASSWORD,
     _ => "",
   };
-  let text = [Text::styled(table_input, Style::default().fg(Color::Black).bg(Color::White))];
+  let text = [Text::styled(
+    table_input,
+    Style::default().fg(Color::Black).bg(Color::White),
+  )];
   let input = Paragraph::new(text.iter())
-    .style(Style::default().fg(Color::Black).bg(Color::Gray).modifier(Modifier::BOLD))
-    .block(Block::default().borders(Borders::ALL).title(title).style(Style::default()));
+    .style(
+      Style::default()
+        .fg(Color::Black)
+        .bg(Color::Gray)
+        .modifier(Modifier::BOLD),
+    )
+    .block(
+      Block::default()
+        .borders(Borders::ALL)
+        .title(title)
+        .style(Style::default()),
+    );
   f.render_widget(input, chunks[1]);
 }
