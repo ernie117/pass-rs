@@ -1,6 +1,5 @@
 use crate::util::banner::BANNER;
 use crate::util::configs::CursesConfigs;
-use crate::util::inputs::InputMode;
 use std::io::Stdout;
 use termion::input::MouseTerminal;
 use termion::raw::RawTerminal;
@@ -16,11 +15,15 @@ pub type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdo
 pub enum RenderMode {
   Normal,
   WithHelp,
-  NewService,
+  NewUserName,
   NewPassword,
+  PasswordCreated,
+  DeletePassword,
+  PasswordDeleted,
+  NoSuchPassword,
 }
 
-static BUTTONS: [&str; 8] = ["/down", "k/up", "y", "d", "r", "c", "d", "q"];
+static BUTTONS: [&str; 8] = ["/down", "k/up", "y", "d", "r", "c", "D", "q"];
 static EFFECTS: [&str; 8] = [
   "move down",
   "move up",
@@ -35,9 +38,12 @@ static EFFECTS: [&str; 8] = [
 static BOX_WIDTH: u16 = 70;
 static BOX_HEIGHT: u16 = 24;
 
-static NORMAL_MODE_TITLE: &str = "Press Ctrl+c to close input, press 'i' to enter service/password";
-static NEW_SERVICE_TITLE: &str = "Enter a new service. Press Ctrl+c to go back";
-static NEW_PASSWORD_TITLE: &str = "Enter a new password. Press Ctrl+c to go back";
+static NEW_USERNAME_TITLE: &str = "Enter a new username. Press Esc to close";
+static NEW_PASSWORD_TITLE: &str = "Enter a new password. Press Esc to close";
+static PASSWORD_CREATED: &str = "Password created! Press Esc to go close";
+static DELETE_PASSWORD: &str = "Enter username of password to delete. Press Esc to cancel";
+static PASSWORD_DELETED: &str = "Password deleted! Press Esc to close";
+static NO_SUCH_PASSWORD: &str = "No such password! Press Esc to close";
 
 static HELP_BOX_HEIGHT: u16 = EFFECTS.len() as u16 + 2;
 static HELP_MSG_SPACING: usize = 40;
@@ -100,7 +106,7 @@ pub fn draw_table(
     .iter()
     .map(|i| Row::StyledData(i.into_iter(), row_style));
 
-  let t = Table::new(["Service", "Password"].iter(), rows)
+  let t = Table::new(["Username", "Password"].iter(), rows)
     .block(
       Block::default()
         .title("Passwords")
@@ -171,7 +177,43 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
 /// Draws the input box for adding a new password.
 pub fn draw_add_password(
   f: &mut Frame<Backend>,
-  table_input_mode: &InputMode,
+  table_render_mode: &RenderMode,
+  table_input: &String,
+) {
+  let chunks = Layout::default()
+    .direction(Direction::Vertical)
+    .margin(2)
+    .constraints(
+      [
+        Constraint::Length(1),
+        Constraint::Length(4),
+        Constraint::Min(1),
+      ]
+      .as_ref(),
+    )
+    .split(Rect {
+      x: (f.size().width / 2) - (BOX_WIDTH + 10) / 2,
+      y: (f.size().height / 2) - (BOX_HEIGHT - 5) / 2,
+      width: BOX_WIDTH + 10,
+      height: BOX_HEIGHT + 1,
+    });
+
+  let title = match table_render_mode {
+    RenderMode::NewUserName => NEW_USERNAME_TITLE,
+    RenderMode::NewPassword => NEW_PASSWORD_TITLE,
+    RenderMode::PasswordCreated => PASSWORD_CREATED,
+    _ => "",
+  };
+  let text = [Text::styled(table_input, Style::default().fg(Color::Black).bg(Color::White))];
+  let input = Paragraph::new(text.iter())
+    .style(Style::default().fg(Color::Black).bg(Color::Gray).modifier(Modifier::BOLD))
+    .block(Block::default().borders(Borders::ALL).title(title).style(Style::default()));
+  f.render_widget(input, chunks[1]);
+}
+
+pub fn draw_delete_password(
+  f: &mut Frame<Backend>,
+  table_render_mode: &RenderMode,
   table_input: &String,
 ) {
   let chunks = Layout::default()
@@ -185,16 +227,23 @@ pub fn draw_add_password(
       ]
       .as_ref(),
     )
-    .split(f.size());
+    .split(Rect {
+      x: (f.size().width / 2) - (BOX_WIDTH + 10) / 2,
+      y: (f.size().height / 2) - (BOX_HEIGHT - 5) / 2,
+      width: BOX_WIDTH + 10,
+      height: BOX_HEIGHT + 1,
+    });
 
-  let title = match table_input_mode {
-    InputMode::Normal => NORMAL_MODE_TITLE,
-    InputMode::NewService => NEW_SERVICE_TITLE,
-    InputMode::NewPassword => NEW_PASSWORD_TITLE,
+  let title = match table_render_mode {
+    RenderMode::DeletePassword => DELETE_PASSWORD,
+    RenderMode::PasswordDeleted => PASSWORD_DELETED,
+    RenderMode::PasswordCreated => PASSWORD_CREATED,
+    RenderMode::NoSuchPassword => NO_SUCH_PASSWORD,
+    _ => "",
   };
-  let text = [Text::raw(table_input)];
+  let text = [Text::styled(table_input, Style::default().fg(Color::Black).bg(Color::White))];
   let input = Paragraph::new(text.iter())
-    .style(Style::default().fg(Color::Yellow))
-    .block(Block::default().borders(Borders::ALL).title(title));
+    .style(Style::default().fg(Color::Black).bg(Color::Gray).modifier(Modifier::BOLD))
+    .block(Block::default().borders(Borders::ALL).title(title).style(Style::default()));
   f.render_widget(input, chunks[1]);
 }

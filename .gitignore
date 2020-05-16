@@ -3,4 +3,5 @@
 *.iml
 *.lock
 *.json
+*.txt
 *.env

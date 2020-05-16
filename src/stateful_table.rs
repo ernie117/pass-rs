@@ -14,7 +14,7 @@ pub struct StatefulPasswordTable {
   pub(crate) input_mode: InputMode,
   pub(crate) render_mode: RenderMode,
   pub(crate) active: bool,
-  pub(crate) new_service: String,
+  pub(crate) new_username: String,
   pub(crate) new_password: String,
 }
 
@@ -29,7 +29,7 @@ impl StatefulPasswordTable {
       input_mode: InputMode::Normal,
       render_mode: RenderMode::Normal,
       active: true,
-      new_service: String::new(),
+      new_username: String::new(),
       new_password: String::new(),
     }
   }
@@ -37,6 +37,7 @@ impl StatefulPasswordTable {
     let i = match self.state.selected() {
       Some(i) => {
         if self.decrypted {
+          self.items[i][0] = decrypt_value(&self.items[i][0], self.key);
           self.items[i][1] = decrypt_value(&self.items[i][1], self.key);
         }
         if i >= self.items.len() - 1 {
@@ -58,6 +59,7 @@ impl StatefulPasswordTable {
       Some(i) => {
         if self.decrypted {
           self.items[i][1] = decrypt_value(&self.items[i][1], self.key);
+          self.items[i][1] = decrypt_value(&self.items[i][1], self.key);
         }
         if i == 0 {
           self.items.len() - 1
@@ -77,6 +79,7 @@ impl StatefulPasswordTable {
     match self.state.selected() {
       Some(i) => {
         self.decrypted = !self.decrypted;
+        self.items[i][0] = decrypt_value(&self.items[i][0], self.key);
         self.items[i][1] = decrypt_value(&self.items[i][1], self.key);
       }
       None => (),

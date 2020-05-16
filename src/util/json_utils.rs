@@ -61,7 +61,7 @@ pub fn read_json_file(path: &str) -> Result<BufReader<File>, Box<dyn Error>> {
 }
 
 pub fn write_new_password(
-  new_service: &str,
+  new_username: &str,
   new_password: &str,
   key: u8,
 ) -> Result<(), Box<dyn Error>> {
@@ -72,7 +72,7 @@ pub fn write_new_password(
   };
 
   map.insert(
-    new_service.to_string(),
+    decrypt_value(new_username, key).to_string(),
     decrypt_value(new_password, key).to_string(),
   );
   let new_passwords = serde_json::to_string_pretty(&map)?;
@@ -83,6 +83,32 @@ pub fn write_new_password(
   file.write_all(new_passwords.as_bytes())?;
 
   Ok(())
+}
+
+pub fn delete_password(username_key: &str, key: u8) -> Result<bool, Box<dyn Error>> {
+  let bufreader = read_json_file("passwords")?;
+  let mut map: HashMap<String, String> = match serde_json::from_reader(bufreader) {
+    Ok(s) => s,
+    Err(e) => panic!("Error serializing from reader: {}", e),
+  };
+
+  let result = map.remove_entry(&decrypt_value(username_key, key));
+  match result {
+    None => return Ok(false),
+    _ => {}
+  };
+
+  let new_passwords = serde_json::to_string_pretty(&map)?;
+
+  let passwords_path = format!("{}/{}.json", &get_home_dir()?, "passwords");
+  let mut file = OpenOptions::new()
+    .write(true)
+    .truncate(true)
+    .open(&passwords_path)?;
+
+  file.write_all(new_passwords.as_bytes())?;
+
+  Ok(true)
 }
 
 pub fn check_directories_and_files() -> Result<(), Box<dyn Error>> {
