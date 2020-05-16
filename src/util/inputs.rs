@@ -160,7 +160,7 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
         table.render_mode = RenderMode::Normal;
       }
       _ => {}
-    }
+    },
     _ => {}
   }
 }
