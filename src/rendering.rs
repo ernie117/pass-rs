@@ -59,29 +59,19 @@ pub fn render_password_table(
         }
         _ => {}
       },
-      RenderMode::NewUserName | RenderMode::NewPassword => match events.next()? {
+      RenderMode::NewUserName | RenderMode::NewPassword | RenderMode::PasswordCreated => match events.next()? {
         Event::Input(key) => {
           inputs::add_password_input_handler(&mut table, key);
         }
         _ => {}
       },
-      RenderMode::DeletePassword => match events.next()? {
+      RenderMode::DeletePassword | RenderMode::PasswordDeleted => match events.next()? {
         Event::Input(key) => {
           inputs::delete_password_input_handler(&mut table, key);
         }
         _ => {}
       },
-      RenderMode::PasswordDeleted | RenderMode::PasswordCreated | RenderMode::NoSuchPassword => {
-        match events.next()? {
-          Event::Input(key) => match key {
-            Key::Esc => {
-              table.render_mode = RenderMode::Normal;
-            }
-            _ => {}
-          },
-          _ => {}
-        }
-      }
+      _ => {},
     }
 
     if !table.new_username.is_empty() && !table.new_password.is_empty() {

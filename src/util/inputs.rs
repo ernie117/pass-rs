@@ -69,12 +69,15 @@ pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
     InputMode::NewUserName => match key {
       Key::Esc => {
         table.render_mode = RenderMode::Normal;
+        table.input_mode = InputMode::Normal;
         table.input.clear();
+        table.new_username.clear();
       }
       Key::Char('\n') => {
         table.new_username.push_str(&table.input);
         table.input.clear();
         table.input_mode = InputMode::NewPassword;
+        table.render_mode = RenderMode::NewPassword;
       }
       Key::Char(c) => {
         table.input.push(c);
@@ -85,9 +88,12 @@ pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
       _ => {}
     },
     InputMode::NewPassword => match key {
-      Key::Ctrl('c') => {
+      Key::Esc => {
+        table.render_mode = RenderMode::Normal;
         table.input_mode = InputMode::Normal;
         table.input.clear();
+        table.new_username.clear();
+        table.new_password.clear();
       }
       Key::Char('\n') => {
         table.new_password.push_str(&table.input);
@@ -148,6 +154,13 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
       }
       _ => {}
     },
+    InputMode::PasswordDeleted => match key {
+      Key::Esc => {
+        table.input_mode = InputMode::Normal;
+        table.render_mode = RenderMode::Normal;
+      }
+      _ => {}
+    }
     _ => {}
   }
 }
