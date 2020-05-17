@@ -10,7 +10,6 @@ use crate::util::json_utils::{read_config, read_passwords};
 use crate::util::ui;
 use crate::util::ui::{Backend, RenderMode};
 use crate::util::utils::build_table_rows;
-use termion::event::Key;
 
 pub fn render_password_table(
   terminal: &mut Terminal<Backend>,
@@ -18,7 +17,7 @@ pub fn render_password_table(
 ) -> Result<(), Box<dyn Error>> {
   let events = Events::new();
   let mut table = StatefulPasswordTable::new(key);
-  table.items = build_table_rows(read_passwords()?);
+  table.items = build_table_rows(read_passwords()?, key);
 
   while table.active {
     // Reading the config in the loop allows for live editing of colours/style/etc.
@@ -67,13 +66,12 @@ pub fn render_password_table(
           _ => {}
         }
       }
-      RenderMode::DeletePassword | RenderMode::PasswordDeleted => match events.next()? {
+      RenderMode::DeletePassword | RenderMode::PasswordDeleted | RenderMode::NoSuchPassword => match events.next()? {
         Event::Input(key) => {
           inputs::delete_password_input_handler(&mut table, key);
         }
         _ => {}
       },
-      _ => {}
     }
 
     if !table.new_username.is_empty() && !table.new_password.is_empty() {

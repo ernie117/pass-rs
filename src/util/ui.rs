@@ -23,7 +23,7 @@ pub enum RenderMode {
   NoSuchPassword,
 }
 
-static BUTTONS: [&str; 8] = ["/down", "k/up", "y", "d", "r", "c", "D", "q"];
+static BUTTONS: [&str; 8] = ["j/down", "k/up", "y", "d", "r", "c", "D", "q"];
 static EFFECTS: [&str; 8] = [
   "move down",
   "move up",
@@ -31,15 +31,15 @@ static EFFECTS: [&str; 8] = [
   "decrypt the password",
   "refresh passwords",
   "create new password",
-  "delete password (coming soon)",
+  "delete password",
   "quit",
 ];
 
 static BOX_WIDTH: u16 = 70;
-static BOX_HEIGHT: u16 = 24;
+static BOX_HEIGHT: u16 = 20;
 
-static NEW_USERNAME_TITLE: &str = "Enter a new username. Press Esc to close";
-static NEW_PASSWORD_TITLE: &str = "Enter a new password. Press Esc to close";
+static NEW_USERNAME_TITLE: &str = "Enter a new username. Press Esc to cancel";
+static NEW_PASSWORD_TITLE: &str = "Enter a new password. Press Esc to cancel";
 static PASSWORD_CREATED: &str = "Password created! Press Esc to go close";
 static DELETE_PASSWORD: &str = "Enter username of password to delete. Press Esc to cancel";
 static PASSWORD_DELETED: &str = "Password deleted! Press Esc to close";
@@ -78,7 +78,7 @@ pub fn draw_table(
     )
     .split(Rect {
       x: (f.size().width / 2) - BOX_WIDTH / 2,
-      y: (f.size().height / 2) - BOX_HEIGHT,
+      y: (f.size().height / 2) - BOX_HEIGHT - 3,
       width: BANNER_LEN,
       height: BANNER_HEIGHT,
     });
@@ -186,16 +186,16 @@ pub fn draw_add_password(
     .constraints(
       [
         Constraint::Length(1),
-        Constraint::Length(4),
+        Constraint::Length(3),
         Constraint::Min(1),
       ]
       .as_ref(),
     )
     .split(Rect {
       x: (f.size().width / 2) - (BOX_WIDTH + 10) / 2,
-      y: (f.size().height / 2) - (BOX_HEIGHT - 5) / 2,
+      y: (f.size().height / 2) - (BOX_HEIGHT + 12) / 2,
       width: BOX_WIDTH + 10,
-      height: BOX_HEIGHT + 1,
+      height: BOX_HEIGHT,
     });
 
   let title = match table_render_mode {
@@ -242,7 +242,7 @@ pub fn draw_delete_password(
     )
     .split(Rect {
       x: (f.size().width / 2) - (BOX_WIDTH + 10) / 2,
-      y: (f.size().height / 2) - (BOX_HEIGHT - 5) / 2,
+      y: (f.size().height / 2) - (BOX_HEIGHT + 12) / 2,
       width: BOX_WIDTH + 10,
       height: BOX_HEIGHT + 1,
     });

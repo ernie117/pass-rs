@@ -6,10 +6,10 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 
 #[inline]
-pub fn build_table_rows(mut map: HashMap<String, String>) -> Vec<Vec<String>> {
+pub fn build_table_rows(mut map: HashMap<String, String>, decrypt_key: u8) -> Vec<Vec<String>> {
   let mut vec_of_vecs = map
     .iter_mut()
-    .map(|(key, value)| vec![key.to_string(), value.to_string()])
+    .map(|(key, value)| vec![decrypt_value(key, decrypt_key).to_string(), value.to_string()])
     .collect::<Vec<Vec<String>>>();
 
   vec_of_vecs.sort();

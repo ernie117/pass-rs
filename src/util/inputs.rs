@@ -161,6 +161,13 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
       }
       _ => {}
     },
+    InputMode::NoSuchPassword => match key {
+      Key::Esc => {
+        table.input_mode = InputMode::Normal;
+        table.render_mode = RenderMode::Normal;
+      }
+      _ => {}
+    }
     _ => {}
   }
 }

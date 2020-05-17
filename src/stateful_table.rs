@@ -37,7 +37,6 @@ impl StatefulPasswordTable {
     let i = match self.state.selected() {
       Some(i) => {
         if self.decrypted {
-          self.items[i][0] = decrypt_value(&self.items[i][0], self.key);
           self.items[i][1] = decrypt_value(&self.items[i][1], self.key);
         }
         if i >= self.items.len() - 1 {
@@ -59,7 +58,6 @@ impl StatefulPasswordTable {
       Some(i) => {
         if self.decrypted {
           self.items[i][1] = decrypt_value(&self.items[i][1], self.key);
-          self.items[i][1] = decrypt_value(&self.items[i][1], self.key);
         }
         if i == 0 {
           self.items.len() - 1
@@ -79,7 +77,6 @@ impl StatefulPasswordTable {
     match self.state.selected() {
       Some(i) => {
         self.decrypted = !self.decrypted;
-        self.items[i][0] = decrypt_value(&self.items[i][0], self.key);
         self.items[i][1] = decrypt_value(&self.items[i][1], self.key);
       }
       None => (),
@@ -101,7 +98,7 @@ impl StatefulPasswordTable {
   }
 
   pub fn re_encrypt(&mut self) -> Result<(), Box<dyn Error>> {
-    self.items = build_table_rows(read_passwords()?);
+    self.items = build_table_rows(read_passwords()?, self.key);
     if self.decrypted {
       self.decrypted = !self.decrypted;
     }
