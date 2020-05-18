@@ -1,26 +1,14 @@
-use crate::stateful_table::StatefulPasswordTable;
+use crate::stateful_table::{CurrentMode, StatefulPasswordTable};
 use crate::util::json_utils::delete_password;
-use crate::util::ui::RenderMode;
 use std::io::Write;
 use termion::event::Key;
 
 use std::io;
 
-pub enum InputMode {
-  Normal,
-  NewUserName,
-  NewPassword,
-  PasswordCreated,
-  DeletePassword,
-  PasswordDeleted,
-  NoSuchPassword,
-}
-
 pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key) {
   match key {
     Key::Char('c') => {
-      table.render_mode = RenderMode::NewUserName;
-      table.input_mode = InputMode::NewUserName;
+      table.current_mode = CurrentMode::NewUserName;
     }
     Key::Char('j') | Key::Down => {
       table.next();
@@ -35,15 +23,10 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
       table.copy();
     }
     Key::Char('?') => {
-      table.render_mode = match table.render_mode {
-        RenderMode::Normal => RenderMode::WithHelp,
-        RenderMode::WithHelp => RenderMode::Normal,
-        RenderMode::NewPassword => RenderMode::NewPassword,
-        RenderMode::NewUserName => RenderMode::NewUserName,
-        RenderMode::DeletePassword => RenderMode::DeletePassword,
-        RenderMode::PasswordDeleted => RenderMode::PasswordDeleted,
-        RenderMode::PasswordCreated => RenderMode::PasswordCreated,
-        RenderMode::NoSuchPassword => RenderMode::NoSuchPassword,
+      table.current_mode = match table.current_mode {
+        CurrentMode::Normal => CurrentMode::WithHelp,
+        CurrentMode::WithHelp => CurrentMode::Normal,
+        _ => table.current_mode,
       };
     }
     Key::Char('r') => {
@@ -52,8 +35,7 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
       }
     }
     Key::Char('D') => {
-      table.render_mode = RenderMode::DeletePassword;
-      table.input_mode = InputMode::DeletePassword;
+      table.current_mode = CurrentMode::DeletePassword;
     }
     Key::Char('q') => {
       table.active = false;
@@ -65,19 +47,20 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
 pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
   io::stdout().flush().ok();
 
-  match table.input_mode {
-    InputMode::NewUserName => match key {
+  match table.current_mode {
+    CurrentMode::NewUserName => match key {
       Key::Esc => {
-        table.render_mode = RenderMode::Normal;
-        table.input_mode = InputMode::Normal;
+        table.current_mode = CurrentMode::Normal;
         table.input.clear();
         table.new_username.clear();
       }
       Key::Char('\n') => {
+        if table.input.is_empty() {
+          return;
+        }
         table.new_username.push_str(&table.input);
         table.input.clear();
-        table.input_mode = InputMode::NewPassword;
-        table.render_mode = RenderMode::NewPassword;
+        table.current_mode = CurrentMode::NewPassword;
       }
       Key::Char(c) => {
         table.input.push(c);
@@ -87,19 +70,20 @@ pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
       }
       _ => {}
     },
-    InputMode::NewPassword => match key {
+    CurrentMode::NewPassword => match key {
       Key::Esc => {
-        table.render_mode = RenderMode::Normal;
-        table.input_mode = InputMode::Normal;
+        table.current_mode = CurrentMode::Normal;
         table.input.clear();
         table.new_username.clear();
         table.new_password.clear();
       }
       Key::Char('\n') => {
+        if table.input.is_empty() {
+          return;
+        }
         table.new_password.push_str(&table.input);
         table.input.clear();
-        table.input_mode = InputMode::PasswordCreated;
-        table.render_mode = RenderMode::PasswordCreated;
+        table.current_mode = CurrentMode::PasswordCreated;
       }
       Key::Char(c) => {
         table.input.push(c);
@@ -109,10 +93,9 @@ pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
       }
       _ => {}
     },
-    InputMode::PasswordCreated => match key {
+    CurrentMode::PasswordCreated => match key {
       Key::Esc => {
-        table.input_mode = InputMode::Normal;
-        table.render_mode = RenderMode::Normal;
+        table.current_mode = CurrentMode::Normal;
       }
       _ => {}
     },
@@ -121,11 +104,10 @@ pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
 }
 
 pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
-  match table.input_mode {
-    InputMode::DeletePassword => match key {
+  match table.current_mode {
+    CurrentMode::DeletePassword => match key {
       Key::Esc => {
-        table.input_mode = InputMode::Normal;
-        table.render_mode = RenderMode::Normal;
+        table.current_mode = CurrentMode::Normal;
         table.input.clear();
       }
       Key::Char('\n') => {
@@ -135,14 +117,12 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
         let result = delete_password(&table.input, table.key).unwrap();
         if result {
           // Password existed.
-          table.input_mode = InputMode::PasswordDeleted;
-          table.render_mode = RenderMode::PasswordDeleted;
+          table.current_mode = CurrentMode::PasswordDeleted;
           table.input.clear();
           table.re_encrypt().unwrap();
         } else {
           // Password didn't exist.
-          table.input_mode = InputMode::NoSuchPassword;
-          table.render_mode = RenderMode::NoSuchPassword;
+          table.current_mode = CurrentMode::NoSuchPassword;
           table.input.clear();
         }
       }
@@ -154,20 +134,18 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
       }
       _ => {}
     },
-    InputMode::PasswordDeleted => match key {
+    CurrentMode::PasswordDeleted => match key {
       Key::Esc => {
-        table.input_mode = InputMode::Normal;
-        table.render_mode = RenderMode::Normal;
+        table.current_mode = CurrentMode::Normal;
       }
       _ => {}
     },
-    InputMode::NoSuchPassword => match key {
+    CurrentMode::NoSuchPassword => match key {
       Key::Esc => {
-        table.input_mode = InputMode::Normal;
-        table.render_mode = RenderMode::Normal;
+        table.current_mode = CurrentMode::Normal;
       }
       _ => {}
-    }
+    },
     _ => {}
   }
 }

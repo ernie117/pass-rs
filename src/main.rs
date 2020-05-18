@@ -9,7 +9,7 @@ use tui::backend::TermionBackend;
 use tui::Terminal;
 
 use crate::rendering::render_password_table;
-use crate::util::json_utils::check_directories_and_files;
+use crate::util::json_utils::{check_directory_exists, check_files};
 use crate::util::utils::verify_dev;
 
 mod rendering;
@@ -29,7 +29,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     key.trim_end().parse::<u8>()?
   };
 
-  check_directories_and_files()?;
+  check_directory_exists()?;
+  check_files()?;
 
   let stdout = io::stdout().into_raw_mode()?;
   let stdout = MouseTerminal::from(stdout);

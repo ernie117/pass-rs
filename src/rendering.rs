@@ -2,13 +2,13 @@ use std::error::Error;
 
 use tui::Terminal;
 
-use crate::stateful_table::StatefulPasswordTable;
+use crate::stateful_table::{CurrentMode, StatefulPasswordTable};
 use crate::util::event::{Event, Events};
 use crate::util::inputs;
 use crate::util::json_utils::write_new_password;
 use crate::util::json_utils::{read_config, read_passwords};
 use crate::util::ui;
-use crate::util::ui::{Backend, RenderMode};
+use crate::util::ui::Backend;
 use crate::util::utils::build_table_rows;
 
 pub fn render_password_table(
@@ -37,28 +37,30 @@ pub fn render_password_table(
         &mut f,
         &table.decrypted,
       );
-      match table.render_mode {
-        RenderMode::WithHelp => {
+      match table.current_mode {
+        CurrentMode::WithHelp => {
           ui::draw_help_window(&mut f);
         }
-        RenderMode::NewPassword | RenderMode::NewUserName | RenderMode::PasswordCreated => {
-          ui::draw_add_password(&mut f, &table.render_mode, &table.input);
+        CurrentMode::NewPassword | CurrentMode::NewUserName | CurrentMode::PasswordCreated => {
+          ui::draw_add_password(&mut f, &table.current_mode, &table.input);
         }
-        RenderMode::DeletePassword | RenderMode::PasswordDeleted | RenderMode::NoSuchPassword => {
-          ui::draw_delete_password(&mut f, &table.render_mode, &table.input);
+        CurrentMode::DeletePassword
+        | CurrentMode::PasswordDeleted
+        | CurrentMode::NoSuchPassword => {
+          ui::draw_delete_password(&mut f, &table.current_mode, &table.input);
         }
         _ => {}
       };
     })?;
 
-    match table.render_mode {
-      RenderMode::Normal | RenderMode::WithHelp => match events.next()? {
+    match table.current_mode {
+      CurrentMode::Normal | CurrentMode::WithHelp => match events.next()? {
         Event::Input(key) => {
           inputs::password_table_input_handler(&mut table, key);
         }
         _ => {}
       },
-      RenderMode::NewUserName | RenderMode::NewPassword | RenderMode::PasswordCreated => {
+      CurrentMode::NewUserName | CurrentMode::NewPassword | CurrentMode::PasswordCreated => {
         match events.next()? {
           Event::Input(key) => {
             inputs::add_password_input_handler(&mut table, key);
@@ -66,14 +68,18 @@ pub fn render_password_table(
           _ => {}
         }
       }
-      RenderMode::DeletePassword | RenderMode::PasswordDeleted | RenderMode::NoSuchPassword => match events.next()? {
-        Event::Input(key) => {
-          inputs::delete_password_input_handler(&mut table, key);
+      CurrentMode::DeletePassword | CurrentMode::PasswordDeleted | CurrentMode::NoSuchPassword => {
+        match events.next()? {
+          Event::Input(key) => {
+            inputs::delete_password_input_handler(&mut table, key);
+          }
+          _ => {}
         }
-        _ => {}
-      },
+      }
     }
 
+    // TODO
+    // Move this to inputs.
     if !table.new_username.is_empty() && !table.new_password.is_empty() {
       write_new_password(&table.new_username, &table.new_password, table.key)?;
       table.new_username.clear();

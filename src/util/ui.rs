@@ -1,3 +1,4 @@
+use crate::stateful_table::CurrentMode;
 use crate::util::banner::BANNER;
 use crate::util::configs::CursesConfigs;
 use std::io::Stdout;
@@ -12,17 +13,6 @@ use tui::Frame;
 
 pub type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>;
 
-pub enum RenderMode {
-  Normal,
-  WithHelp,
-  NewUserName,
-  NewPassword,
-  PasswordCreated,
-  DeletePassword,
-  PasswordDeleted,
-  NoSuchPassword,
-}
-
 static BUTTONS: [&str; 8] = ["j/down", "k/up", "y", "d", "r", "c", "D", "q"];
 static EFFECTS: [&str; 8] = [
   "move down",
@@ -35,18 +25,21 @@ static EFFECTS: [&str; 8] = [
   "quit",
 ];
 
-static BOX_WIDTH: u16 = 70;
-static BOX_HEIGHT: u16 = 20;
-
 static NEW_USERNAME_TITLE: &str = "Enter a new username. Press Esc to cancel";
 static NEW_PASSWORD_TITLE: &str = "Enter a new password. Press Esc to cancel";
 static PASSWORD_CREATED: &str = "Password created! Press Esc to go close";
 static DELETE_PASSWORD: &str = "Enter username of password to delete. Press Esc to cancel";
 static PASSWORD_DELETED: &str = "Password deleted! Press Esc to close";
 static NO_SUCH_PASSWORD: &str = "No such password! Press Esc to close";
+static BOX_WIDTH: u16 = 70;
+static BOX_HEIGHT: u16 = 20;
 
+static HELP_PROMPT_HEIGHT: u16 = 3;
 static HELP_BOX_HEIGHT: u16 = EFFECTS.len() as u16 + 2;
 static HELP_MSG_SPACING: usize = 40;
+
+static ADD_DEL_PASSWORD_BOX_WIDTH: u16 = BOX_WIDTH + 10;
+static ADD_DEL_PASSWORD_BOX_HEIGHT: u16 = 8;
 
 static BANNER_LEN: u16 = 70;
 static BANNER_HEIGHT: u16 = 12;
@@ -129,7 +122,7 @@ pub fn draw_table(
       x: (f.size().width / 2) - BOX_WIDTH / 2,
       y: ((f.size().height / 2) - BOX_HEIGHT / 2) + BOX_HEIGHT,
       width: BOX_WIDTH,
-      height: 3,
+      height: HELP_PROMPT_HEIGHT,
     });
 
   let text = [Text::raw("? for help")];
@@ -175,11 +168,7 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
 }
 
 /// Draws the input box for adding a new password.
-pub fn draw_add_password(
-  f: &mut Frame<Backend>,
-  table_render_mode: &RenderMode,
-  table_input: &String,
-) {
+pub fn draw_add_password(f: &mut Frame<Backend>, current_mode: &CurrentMode, table_input: &String) {
   let chunks = Layout::default()
     .direction(Direction::Vertical)
     .margin(2)
@@ -192,16 +181,16 @@ pub fn draw_add_password(
       .as_ref(),
     )
     .split(Rect {
-      x: (f.size().width / 2) - (BOX_WIDTH + 10) / 2,
+      x: (f.size().width / 2) - ADD_DEL_PASSWORD_BOX_WIDTH / 2,
       y: (f.size().height / 2) - (BOX_HEIGHT + 12) / 2,
-      width: BOX_WIDTH + 10,
-      height: BOX_HEIGHT,
+      width: ADD_DEL_PASSWORD_BOX_WIDTH,
+      height: ADD_DEL_PASSWORD_BOX_HEIGHT,
     });
 
-  let title = match table_render_mode {
-    RenderMode::NewUserName => NEW_USERNAME_TITLE,
-    RenderMode::NewPassword => NEW_PASSWORD_TITLE,
-    RenderMode::PasswordCreated => PASSWORD_CREATED,
+  let title = match current_mode {
+    CurrentMode::NewUserName => NEW_USERNAME_TITLE,
+    CurrentMode::NewPassword => NEW_PASSWORD_TITLE,
+    CurrentMode::PasswordCreated => PASSWORD_CREATED,
     _ => "",
   };
   let text = [Text::styled(
@@ -226,7 +215,7 @@ pub fn draw_add_password(
 
 pub fn draw_delete_password(
   f: &mut Frame<Backend>,
-  table_render_mode: &RenderMode,
+  current_mode: &CurrentMode,
   table_input: &String,
 ) {
   let chunks = Layout::default()
@@ -243,15 +232,15 @@ pub fn draw_delete_password(
     .split(Rect {
       x: (f.size().width / 2) - (BOX_WIDTH + 10) / 2,
       y: (f.size().height / 2) - (BOX_HEIGHT + 12) / 2,
-      width: BOX_WIDTH + 10,
-      height: BOX_HEIGHT + 1,
+      width: ADD_DEL_PASSWORD_BOX_WIDTH,
+      height: ADD_DEL_PASSWORD_BOX_HEIGHT,
     });
 
-  let title = match table_render_mode {
-    RenderMode::DeletePassword => DELETE_PASSWORD,
-    RenderMode::PasswordDeleted => PASSWORD_DELETED,
-    RenderMode::PasswordCreated => PASSWORD_CREATED,
-    RenderMode::NoSuchPassword => NO_SUCH_PASSWORD,
+  let title = match current_mode {
+    CurrentMode::DeletePassword => DELETE_PASSWORD,
+    CurrentMode::PasswordDeleted => PASSWORD_DELETED,
+    CurrentMode::PasswordCreated => PASSWORD_CREATED,
+    CurrentMode::NoSuchPassword => NO_SUCH_PASSWORD,
     _ => "",
   };
   let text = [Text::styled(
