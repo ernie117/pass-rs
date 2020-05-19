@@ -44,7 +44,7 @@ static ADD_DEL_PASSWORD_BOX_HEIGHT: u16 = 8;
 static BANNER_LEN: u16 = 70;
 static BANNER_HEIGHT: u16 = 12;
 
-/// Draws the main view including the password table, banner and help prompt.
+/// Draws the main view including the password table and banner.
 pub fn draw_table(
   table_state: &mut TableState,
   table_items: &Vec<Vec<String>>,
@@ -167,7 +167,11 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
   f.render_widget(help, rects[0]);
 }
 /// Draws the input box for adding/deleting a new password.
-pub fn draw_add_delete_password(f: &mut Frame<Backend>, current_mode: &CurrentMode, table_input: &String) {
+pub fn draw_add_delete_password(
+  f: &mut Frame<Backend>,
+  current_mode: &CurrentMode,
+  table_input: &String,
+) {
   let chunks = Layout::default()
     .direction(Direction::Vertical)
     .margin(2)

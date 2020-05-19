@@ -3,7 +3,8 @@ use crate::util::json_utils::delete_password;
 use std::io::Write;
 use termion::event::Key;
 
-use std::io;
+use super::json_utils::write_new_password;
+use std::{error::Error, io};
 
 pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key) {
   match key {
@@ -44,7 +45,10 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
   }
 }
 
-pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
+pub fn add_password_input_handler(
+  table: &mut StatefulPasswordTable,
+  key: Key,
+) -> Result<(), Box<dyn Error>> {
   io::stdout().flush().ok();
 
   match table.current_mode {
@@ -56,7 +60,7 @@ pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
       }
       Key::Char('\n') => {
         if table.input.is_empty() {
-          return;
+          ()
         }
         table.new_username.push_str(&table.input);
         table.input.clear();
@@ -79,11 +83,18 @@ pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
       }
       Key::Char('\n') => {
         if table.input.is_empty() {
-          return;
+          ()
         }
         table.new_password.push_str(&table.input);
         table.input.clear();
         table.current_mode = CurrentMode::PasswordCreated;
+
+        if !table.new_username.is_empty() && !table.new_password.is_empty() {
+          write_new_password(&table.new_username, &table.new_password, table.key)?;
+          table.new_username.clear();
+          table.new_password.clear();
+          table.re_encrypt()?;
+        }
       }
       Key::Char(c) => {
         table.input.push(c);
@@ -101,6 +112,7 @@ pub fn add_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {
     },
     _ => {}
   }
+  Ok(())
 }
 
 pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key) {

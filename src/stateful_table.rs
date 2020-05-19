@@ -82,6 +82,10 @@ impl StatefulPasswordTable {
   }
 
   pub fn decrypt(&mut self) {
+    if self.items.len() == 0 {
+      // So we don't subscript an array that's empty.
+      return;
+    }
     match self.state.selected() {
       Some(i) => {
         self.decrypted = !self.decrypted;

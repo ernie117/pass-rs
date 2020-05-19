@@ -5,16 +5,12 @@ use tui::Terminal;
 use crate::stateful_table::{CurrentMode, StatefulPasswordTable};
 use crate::util::event::{Event, Events};
 use crate::util::inputs;
-use crate::util::json_utils::write_new_password;
 use crate::util::json_utils::{read_config, read_passwords};
 use crate::util::ui;
 use crate::util::ui::Backend;
 use crate::util::utils::build_table_rows;
 
-pub fn render_password_table(
-  terminal: &mut Terminal<Backend>,
-  key: u8,
-) -> Result<(), Box<dyn Error>> {
+pub fn run(terminal: &mut Terminal<Backend>, key: u8) -> Result<(), Box<dyn Error>> {
   let events = Events::new();
   let mut table = StatefulPasswordTable::new(key);
   table.items = build_table_rows(read_passwords()?, key);
@@ -63,7 +59,7 @@ pub fn render_password_table(
       CurrentMode::NewUserName | CurrentMode::NewPassword | CurrentMode::PasswordCreated => {
         match events.next()? {
           Event::Input(key) => {
-            inputs::add_password_input_handler(&mut table, key);
+            inputs::add_password_input_handler(&mut table, key)?;
           }
           _ => {}
         }
@@ -76,15 +72,6 @@ pub fn render_password_table(
           _ => {}
         }
       }
-    }
-
-    // TODO
-    // Move this to inputs.
-    if !table.new_username.is_empty() && !table.new_password.is_empty() {
-      write_new_password(&table.new_username, &table.new_password, table.key)?;
-      table.new_username.clear();
-      table.new_password.clear();
-      table.re_encrypt()?;
     }
   }
 

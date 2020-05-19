@@ -8,11 +8,10 @@ use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::Terminal;
 
-use crate::rendering::render_password_table;
 use crate::util::json_utils::{check_directory_exists, check_files};
 use crate::util::utils::verify_dev;
 
-mod rendering;
+mod app;
 mod stateful_table;
 mod util;
 
@@ -39,7 +38,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   let mut terminal = Terminal::new(backend)?;
   terminal.hide_cursor()?;
 
-  if let Err(error) = render_password_table(&mut terminal, u8_key) {
+  if let Err(error) = app::run(&mut terminal, u8_key) {
     terminal.show_cursor()?;
     println!("Error rendering table: {}", error);
   }

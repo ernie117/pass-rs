@@ -61,7 +61,7 @@ pub fn verify_dev() -> bool {
     None => OsString::new(),
   };
 
-  let tmp = raw_password.as_os_str().to_str().unwrap().to_string();
+  let tmp = raw_password.into_string().unwrap();
   let raw_password_bytes = tmp.as_bytes();
 
   let final_password = encrypted_password.as_os_str().to_str().unwrap();
@@ -77,9 +77,9 @@ pub fn verify_dev() -> bool {
 mod tests {
   extern crate pretty_assertions;
   use super::*;
+  use pretty_assertions::assert_eq;
   use std::collections::HashMap;
   use std::process::Command;
-  use pretty_assertions::assert_eq;
 
   #[test]
   fn test_encrypt_value() {
@@ -111,6 +111,7 @@ mod tests {
   }
 
   #[test]
+  #[ignore]
   fn test_copy_to_clipboard() {
     copy_to_clipboard("test string").unwrap();
     let output;
@@ -119,6 +120,6 @@ mod tests {
     } else {
       output = Command::new("xclip").arg("-o").output().unwrap().stdout;
     }
-    assert_eq!(&String::from_utf8_lossy(&output), "test string");
+    assert_eq!(String::from_utf8(output).unwrap(), "test string");
   }
 }
