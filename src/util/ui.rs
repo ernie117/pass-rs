@@ -166,9 +166,8 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
 
   f.render_widget(help, rects[0]);
 }
-
-/// Draws the input box for adding a new password.
-pub fn draw_add_password(f: &mut Frame<Backend>, current_mode: &CurrentMode, table_input: &String) {
+/// Draws the input box for adding/deleting a new password.
+pub fn draw_add_delete_password(f: &mut Frame<Backend>, current_mode: &CurrentMode, table_input: &String) {
   let chunks = Layout::default()
     .direction(Direction::Vertical)
     .margin(2)
@@ -190,58 +189,11 @@ pub fn draw_add_password(f: &mut Frame<Backend>, current_mode: &CurrentMode, tab
   let title = match current_mode {
     CurrentMode::NewUserName => NEW_USERNAME_TITLE,
     CurrentMode::NewPassword => NEW_PASSWORD_TITLE,
-    CurrentMode::PasswordCreated => PASSWORD_CREATED,
-    _ => "",
-  };
-  let text = [Text::styled(
-    table_input,
-    Style::default().fg(Color::Black).bg(Color::White),
-  )];
-  let input = Paragraph::new(text.iter())
-    .style(
-      Style::default()
-        .fg(Color::Black)
-        .bg(Color::Gray)
-        .modifier(Modifier::BOLD),
-    )
-    .block(
-      Block::default()
-        .borders(Borders::ALL)
-        .title(title)
-        .style(Style::default()),
-    );
-  f.render_widget(input, chunks[1]);
-}
-
-pub fn draw_delete_password(
-  f: &mut Frame<Backend>,
-  current_mode: &CurrentMode,
-  table_input: &String,
-) {
-  let chunks = Layout::default()
-    .direction(Direction::Vertical)
-    .margin(2)
-    .constraints(
-      [
-        Constraint::Length(1),
-        Constraint::Length(3),
-        Constraint::Min(1),
-      ]
-      .as_ref(),
-    )
-    .split(Rect {
-      x: (f.size().width / 2) - (BOX_WIDTH + 10) / 2,
-      y: (f.size().height / 2) - (BOX_HEIGHT + 12) / 2,
-      width: ADD_DEL_PASSWORD_BOX_WIDTH,
-      height: ADD_DEL_PASSWORD_BOX_HEIGHT,
-    });
-
-  let title = match current_mode {
     CurrentMode::DeletePassword => DELETE_PASSWORD,
     CurrentMode::PasswordDeleted => PASSWORD_DELETED,
     CurrentMode::PasswordCreated => PASSWORD_CREATED,
     CurrentMode::NoSuchPassword => NO_SUCH_PASSWORD,
-    _ => "",
+    _ => "Unknown mode",
   };
   let text = [Text::styled(
     table_input,

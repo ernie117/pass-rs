@@ -75,9 +75,11 @@ pub fn verify_dev() -> bool {
 
 #[cfg(test)]
 mod tests {
+  extern crate pretty_assertions;
   use super::*;
   use std::collections::HashMap;
   use std::process::Command;
+  use pretty_assertions::assert_eq;
 
   #[test]
   fn test_encrypt_value() {
@@ -109,11 +111,14 @@ mod tests {
   }
 
   #[test]
-  #[ignore]
   fn test_copy_to_clipboard() {
     copy_to_clipboard("test string").unwrap();
-    let result = Command::new("pbpaste").output().unwrap();
-    let text = String::from_utf8_lossy(&result.stdout);
-    assert_eq!(text, "test string");
+    let output;
+    if cfg!(target_os = "macos") {
+      output = Command::new("pbpaste").output().unwrap().stdout;
+    } else {
+      output = Command::new("xclip").arg("-o").output().unwrap().stdout;
+    }
+    assert_eq!(&String::from_utf8_lossy(&output), "test string");
   }
 }

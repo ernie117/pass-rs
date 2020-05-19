@@ -42,12 +42,12 @@ pub fn render_password_table(
           ui::draw_help_window(&mut f);
         }
         CurrentMode::NewPassword | CurrentMode::NewUserName | CurrentMode::PasswordCreated => {
-          ui::draw_add_password(&mut f, &table.current_mode, &table.input);
+          ui::draw_add_delete_password(&mut f, &table.current_mode, &table.input);
         }
         CurrentMode::DeletePassword
         | CurrentMode::PasswordDeleted
         | CurrentMode::NoSuchPassword => {
-          ui::draw_delete_password(&mut f, &table.current_mode, &table.input);
+          ui::draw_add_delete_password(&mut f, &table.current_mode, &table.input);
         }
         _ => {}
       };
