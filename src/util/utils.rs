@@ -61,6 +61,11 @@ pub fn verify_dev() -> bool {
     None => OsString::new(),
   };
 
+  match raw_password.as_os_str().to_str() {
+    Some(_s) => {},
+    None => return false,
+  }
+
   let tmp = raw_password.into_string().unwrap();
   let raw_password_bytes = tmp.as_bytes();
 

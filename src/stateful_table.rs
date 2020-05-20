@@ -101,6 +101,8 @@ impl StatefulPasswordTable {
         if let Err(error) = copy_to_clipboard(&self.items[i][1]) {
           panic!("Error copying to clipboard: {}", error);
         }
+        self.decrypted = !self.decrypted;
+        self.items[i][1] = decrypt_value(&self.items[i][1], self.key);
       } else {
         if let Err(error) = copy_to_clipboard(&decrypt_value(&self.items[i][1], self.key)) {
           panic!("Error copying to clipboard: {}", error);
