@@ -10,6 +10,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Write};
 use std::path::Path;
 use base64::encode;
+use aes_gcm::Aes128Gcm;
 
 #[derive(Hash, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct PasswordEntry {
@@ -58,7 +59,7 @@ pub fn read_json_file(path: &str) -> Result<BufReader<File>, Box<dyn Error>> {
 pub fn write_new_password(
   new_username: &str,
   new_password: &str,
-  key: &[u8],
+  key: &Aes128Gcm,
 ) -> Result<(), Box<dyn Error>> {
   let bufreader = read_json_file("passwords")?;
   let mut map: HashMap<String, PasswordEntry> = match serde_json::from_reader(bufreader) {
@@ -66,8 +67,8 @@ pub fn write_new_password(
     Err(e) => panic!("Error serializing from reader: {}", e),
   };
 
-  let (encrypted_pwd, pwd_nonce) = encrypt(new_password, &key[..]);
-  let new_entry = PasswordEntry::new(encode(encrypted_pwd), encode(pwd_nonce));
+  let (encrypted_pwd, pwd_nonce) = encrypt(new_password, &key);
+  let new_entry = PasswordEntry::new(encode(encrypted_pwd), pwd_nonce);
 
   map.insert(new_username.to_string(), new_entry);
 

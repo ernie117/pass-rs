@@ -56,9 +56,7 @@ pub fn copy_to_clipboard(string_to_copy: &str) -> Result<(), Box<dyn Error>> {
   Ok(())
 }
 
-pub fn encrypt<'a>(password: &'a str, password_key: &'a [u8]) -> (Vec<u8>, String) {
-  let key = GenericArray::clone_from_slice(password_key);
-  let aead = Aes128Gcm::new(key);
+pub fn encrypt<'a>(password: &'a str, aead: &'a Aes128Gcm) -> (Vec<u8>, String) {
   let nonce: String = rand::thread_rng()
     .sample_iter(&Alphanumeric)
     .take(12)
@@ -69,21 +67,15 @@ pub fn encrypt<'a>(password: &'a str, password_key: &'a [u8]) -> (Vec<u8>, Strin
   (cipher_text, nonce)
 }
 
-pub fn encrypt_known(password: &str, password_key: &[u8], nonce: &[u8]) -> String {
-  let key = GenericArray::clone_from_slice(password_key);
-  let aead = Aes128Gcm::new(key);
+pub fn encrypt_known(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
+  let cipher_text = aead.encrypt(GenericArray::from_slice(nonce.as_bytes()), password.as_bytes().as_ref()).unwrap();
 
-  let cipher_text = aead.encrypt(GenericArray::from_slice(nonce), password.as_bytes().as_ref()).unwrap();
-
-  encode(String::from_utf8_lossy(&cipher_text).to_string())
+  encode(cipher_text)
 }
 
-pub fn decrypt(password: &str, password_key: &[u8], nonce: &[u8]) -> String {
-  let key = GenericArray::clone_from_slice(password_key);
-  let aead = Aes128Gcm::new(key);
-
+pub fn decrypt(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
   let decoded_password = decode(password.as_bytes()).unwrap();
-  let decrypted = aead.decrypt(GenericArray::from_slice(nonce), decoded_password.as_ref()).expect("decryption failure!");
+  let decrypted = aead.decrypt(GenericArray::from_slice(nonce.as_bytes()), decoded_password.as_ref()).expect("decryption failure!");
   String::from_utf8(decrypted).unwrap()
 }
 

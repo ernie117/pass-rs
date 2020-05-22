@@ -3,6 +3,8 @@ use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_k
 use std::error::Error;
 use tui::widgets::TableState;
 use base64::decode;
+use aes_gcm::Aes128Gcm;
+use generic_array::GenericArray;
 
 #[derive(Copy, Clone)]
 pub enum CurrentMode {
@@ -20,17 +22,16 @@ pub struct StatefulPasswordTable {
   pub(crate) state: TableState,
   pub(crate) items: Vec<Vec<String>>,
   pub(crate) decrypted: bool,
-  pub(crate) key: Box<[u8]>,
+  pub(crate) key: Aes128Gcm,
   pub(crate) input: String,
   pub(crate) current_mode: CurrentMode,
   pub(crate) active: bool,
-  pub(crate) active_password: String,
   pub(crate) new_username: String,
   pub(crate) new_password: String,
 }
 
 impl StatefulPasswordTable {
-  pub(crate) fn new(key: Box<[u8]>) -> StatefulPasswordTable {
+  pub(crate) fn new(key: Aes128Gcm) -> StatefulPasswordTable {
     StatefulPasswordTable {
       state: TableState::default(),
       items: Vec::new(),
@@ -39,7 +40,6 @@ impl StatefulPasswordTable {
       input: String::new(),
       current_mode: CurrentMode::Normal,
       active: true,
-      active_password: String::new(),
       new_username: String::new(),
       new_password: String::new(),
     }
@@ -48,7 +48,7 @@ impl StatefulPasswordTable {
     let i = match self.state.selected() {
       Some(i) => {
         if self.decrypted {
-          self.items[i][1] = decrypt(&self.items[i][1], &self.key, &decode(self.items[i][2].as_bytes()).unwrap());
+          self.items[i][1] = decrypt(&self.items[i][1], &self.key, &self.items[i][2]);
         }
         if i >= self.items.len() - 1 {
           0
@@ -68,7 +68,7 @@ impl StatefulPasswordTable {
     let i = match self.state.selected() {
       Some(i) => {
         if self.decrypted {
-          self.items[i][1] = decrypt(&self.items[i][1], &self.key, &decode(self.items[i][2].as_bytes()).unwrap());
+          self.items[i][1] = decrypt(&self.items[i][1], &self.key, &self.items[i][2]);
         }
         if i == 0 {
           self.items.len() - 1
@@ -93,12 +93,10 @@ impl StatefulPasswordTable {
       Some(i) => {
         if self.decrypted {
           self.decrypted = false;
-          self.items[i][1] = self.active_password.clone();
-          self.active_password = String::new();
+          self.items[i][1] = encrypt_known(&self.items[i][1], &self.key, &self.items[i][2]);
         } else {
           self.decrypted = true;
-          self.active_password = self.items[i][1].clone();
-          self.items[i][1] = decrypt(&self.items[i][1], &self.key, &decode(self.items[i][2].as_bytes()).unwrap());
+          self.items[i][1] = decrypt(&self.items[i][1], &self.key, &self.items[i][2]);
         }
       }
       None => (),
@@ -111,10 +109,10 @@ impl StatefulPasswordTable {
         if let Err(error) = copy_to_clipboard(&self.items[i][1]) {
           panic!("Error copying to clipboard: {}", error);
         }
-        self.decrypted = true;
-        self.items[i][1] = encrypt_known(&self.items[i][1], &self.key, self.items[i][2].as_bytes());
+        self.decrypted = false;
+        self.items[i][1] = encrypt_known(&self.items[i][1], &self.key, &self.items[i][2]);
       } else {
-        if let Err(error) = copy_to_clipboard(&decrypt(&self.items[i][1], &self.key, &decode(self.items[i][2].as_bytes()).unwrap())) {
+        if let Err(error) = copy_to_clipboard(&decrypt(&self.items[i][1], &self.key, &self.items[i][2])) {
           panic!("Error copying to clipboard: {}", error);
         }
       }

@@ -11,6 +11,8 @@ use tui::Terminal;
 
 use crate::util::json_utils::{check_directory_exists, check_files, write_new_password};
 use crate::util::utils::{verify_dev, decrypt, encrypt_known};
+use aes_gcm::Aes128Gcm;
+use aead::{Aead, NewAead, generic_array::GenericArray};
 
 mod app;
 mod stateful_table;
@@ -29,6 +31,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     key.trim_end().parse::<String>()?
   };
 
+  let final_key = GenericArray::clone_from_slice(key.as_bytes());
+  let aead = Aes128Gcm::new(final_key);
+
   check_directory_exists()?;
   check_files()?;
 
@@ -39,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   let mut terminal = Terminal::new(backend)?;
   terminal.hide_cursor()?;
 
-  if let Err(error) = app::run(&mut terminal, Box::from(key.as_bytes())) {
+  if let Err(error) = app::run(&mut terminal, aead) {
     terminal.show_cursor()?;
     println!("Error rendering table: {}", error);
   }
@@ -50,7 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   // let thing = decrypt("LCg3S8mBFw946JaMD8GB+EpowACYQvJ2", key.as_bytes(), &decode("dmxEVGFMQUxEamYy")?);
   // println!("{:?}", thing);
   // println!("{:?}", String::from_utf8_lossy(&decode("dmxEVGFMQUxEamYy").expect("problems")));
-  // println!("{:?}", encrypt_known("password", key.as_bytes(), &decode("dmxEVGFMQUxEamYy")?));
+  // println!("{:?}", encrypt_known("password", &aead, "HUUP0FAGadQh"));
 
   Ok(())
 }

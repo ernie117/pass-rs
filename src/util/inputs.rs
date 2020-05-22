@@ -90,7 +90,7 @@ pub fn add_password_input_handler(
         table.current_mode = CurrentMode::PasswordCreated;
 
         if !table.new_username.is_empty() && !table.new_password.is_empty() {
-          // write_new_password(&table.new_username, &table.new_password, table.key.as_ref())?;
+          write_new_password(&table.new_username, &table.new_password, &table.key)?;
           table.new_username.clear();
           table.new_password.clear();
           table.re_encrypt()?;
