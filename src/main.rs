@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::io;
 use std::io::prelude::*;
+use base64::decode;
 
 use termion::input::MouseTerminal;
 use termion::raw::IntoRawMode;
@@ -8,8 +9,8 @@ use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::Terminal;
 
-use crate::util::json_utils::{check_directory_exists, check_files};
-use crate::util::utils::verify_dev;
+use crate::util::json_utils::{check_directory_exists, check_files, write_new_password};
+use crate::util::utils::{verify_dev, decrypt, encrypt_known};
 
 mod app;
 mod stateful_table;
@@ -18,14 +19,14 @@ mod util;
 fn main() -> Result<(), Box<dyn Error>> {
   let mut key = String::new();
 
-  let u8_key = if verify_dev() {
-    6
+  key = if verify_dev() {
+    "testing123456789".to_string()
   } else {
     let stdin = io::stdin();
     print!("Enter your key: ");
     io::stdout().flush()?;
     stdin.read_line(&mut key)?;
-    key.trim_end().parse::<u8>()?
+    key.trim_end().parse::<String>()?
   };
 
   check_directory_exists()?;
@@ -38,12 +39,18 @@ fn main() -> Result<(), Box<dyn Error>> {
   let mut terminal = Terminal::new(backend)?;
   terminal.hide_cursor()?;
 
-  if let Err(error) = app::run(&mut terminal, u8_key) {
+  if let Err(error) = app::run(&mut terminal, Box::from(key.as_bytes())) {
     terminal.show_cursor()?;
     println!("Error rendering table: {}", error);
   }
 
   terminal.show_cursor()?;
+
+  // write_new_password("testing", "password", key.as_bytes());
+  // let thing = decrypt("LCg3S8mBFw946JaMD8GB+EpowACYQvJ2", key.as_bytes(), &decode("dmxEVGFMQUxEamYy")?);
+  // println!("{:?}", thing);
+  // println!("{:?}", String::from_utf8_lossy(&decode("dmxEVGFMQUxEamYy").expect("problems")));
+  // println!("{:?}", encrypt_known("password", key.as_bytes(), &decode("dmxEVGFMQUxEamYy")?));
 
   Ok(())
 }

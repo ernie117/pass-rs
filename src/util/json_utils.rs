@@ -1,18 +1,32 @@
 use crate::util::configs::{CursesConfigs, RawConfigs};
-use crate::util::utils::decrypt_value;
+use crate::util::utils::encrypt;
 use dirs::home_dir;
 use serde_json::json;
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Write};
 use std::path::Path;
+use base64::encode;
+
+#[derive(Hash, Eq, PartialEq, Debug, Serialize, Deserialize)]
+pub struct PasswordEntry {
+  pub(crate) password: String,
+  pub(crate) nonce: String,
+}
+
+impl PasswordEntry {
+  fn new(new_password: String, new_nonce: String) -> Self {
+    PasswordEntry { password: new_password, nonce: new_nonce }
+  }
+}
 
 #[inline]
-pub fn read_passwords() -> Result<HashMap<String, String>, Box<dyn Error>> {
+pub fn read_passwords() -> Result<HashMap<String, PasswordEntry>, Box<dyn Error>> {
   let bufreader = read_json_file("passwords")?;
-  let map: HashMap<String, String>;
+  let map: HashMap<String, PasswordEntry>;
   match serde_json::from_reader(bufreader) {
     Ok(s) => map = s,
     Err(e) => panic!("Error serializing from reader: {}", e),
@@ -44,18 +58,19 @@ pub fn read_json_file(path: &str) -> Result<BufReader<File>, Box<dyn Error>> {
 pub fn write_new_password(
   new_username: &str,
   new_password: &str,
-  key: u8,
+  key: &[u8],
 ) -> Result<(), Box<dyn Error>> {
   let bufreader = read_json_file("passwords")?;
-  let mut map: HashMap<String, String> = match serde_json::from_reader(bufreader) {
+  let mut map: HashMap<String, PasswordEntry> = match serde_json::from_reader(bufreader) {
     Ok(s) => s,
     Err(e) => panic!("Error serializing from reader: {}", e),
   };
 
-  map.insert(
-    decrypt_value(new_username, key).to_string(),
-    decrypt_value(new_password, key).to_string(),
-  );
+  let (encrypted_pwd, pwd_nonce) = encrypt(new_password, &key[..]);
+  let new_entry = PasswordEntry::new(encode(encrypted_pwd), encode(pwd_nonce));
+
+  map.insert(new_username.to_string(), new_entry);
+
   let new_passwords = serde_json::to_string_pretty(&map)?;
 
   let passwords_path = format!("{}/{}.json", &get_home_dir()?, "passwords");
@@ -66,14 +81,14 @@ pub fn write_new_password(
   Ok(())
 }
 
-pub fn delete_password(username_key: &str, key: u8) -> Result<bool, Box<dyn Error>> {
+pub fn delete_password(username_key: &str) -> Result<bool, Box<dyn Error>> {
   let bufreader = read_json_file("passwords")?;
   let mut map: HashMap<String, String> = match serde_json::from_reader(bufreader) {
     Ok(s) => s,
     Err(e) => panic!("Error serializing from reader: {}", e),
   };
 
-  let result = map.remove_entry(&decrypt_value(username_key, key));
+  let result = map.remove_entry(username_key);
   match result {
     None => return Ok(false),
     _ => {}
