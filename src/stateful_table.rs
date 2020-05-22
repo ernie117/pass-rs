@@ -46,7 +46,7 @@ impl StatefulPasswordTable {
     let i = match self.state.selected() {
       Some(i) => {
         if self.decrypted {
-          self.items[i][1] = decrypt(&self.items[i][1], &self.key, &self.items[i][2]);
+          self.items[i][1] = encrypt_known(&self.items[i][1], &self.key, &self.items[i][2]);
         }
         if i >= self.items.len() - 1 {
           0
@@ -66,7 +66,7 @@ impl StatefulPasswordTable {
     let i = match self.state.selected() {
       Some(i) => {
         if self.decrypted {
-          self.items[i][1] = decrypt(&self.items[i][1], &self.key, &self.items[i][2]);
+          self.items[i][1] = encrypt_known(&self.items[i][1], &self.key, &self.items[i][2]);
         }
         if i == 0 {
           self.items.len() - 1
