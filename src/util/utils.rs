@@ -49,7 +49,7 @@ pub fn copy_to_clipboard(string_to_copy: &str) -> Result<(), Box<dyn Error>> {
   Ok(())
 }
 
-pub fn encrypt<'a>(password: &'a str, aead: &'a Aes128Gcm) -> (Vec<u8>, String) {
+pub fn encrypt(password: &str, aead: &Aes128Gcm) -> (Vec<u8>, String) {
   let nonce: String = rand::thread_rng()
     .sample_iter(&Alphanumeric)
     .take(12)
