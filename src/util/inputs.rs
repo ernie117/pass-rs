@@ -90,7 +90,7 @@ pub fn add_password_input_handler(
         table.current_mode = CurrentMode::PasswordCreated;
 
         if !table.new_username.is_empty() && !table.new_password.is_empty() {
-          write_new_password(&table.new_username, &table.new_password, table.key)?;
+          write_new_password(&table.new_username, &table.new_password, &table.key)?;
           table.new_username.clear();
           table.new_password.clear();
           table.re_encrypt()?;
@@ -126,7 +126,7 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
         if table.input.is_empty() {
           return;
         }
-        let result = delete_password(&table.input, table.key).unwrap();
+        let result = delete_password(&table.input).unwrap();
         if result {
           // Password existed.
           table.current_mode = CurrentMode::PasswordDeleted;

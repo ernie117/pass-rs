@@ -10,6 +10,8 @@ use tui::Terminal;
 
 use crate::util::json_utils::{check_directory_exists, check_files};
 use crate::util::utils::verify_dev;
+use aead::{generic_array::GenericArray, NewAead};
+use aes_gcm::Aes128Gcm;
 
 mod app;
 mod stateful_table;
@@ -18,15 +20,18 @@ mod util;
 fn main() -> Result<(), Box<dyn Error>> {
   let mut key = String::new();
 
-  let u8_key = if verify_dev() {
-    6
+  key = if verify_dev() {
+    "testing123456789".to_string()
   } else {
     let stdin = io::stdin();
     print!("Enter your key: ");
     io::stdout().flush()?;
     stdin.read_line(&mut key)?;
-    key.trim_end().parse::<u8>()?
+    key.trim_end().parse::<String>()?
   };
+
+  let final_key = GenericArray::clone_from_slice(key.as_bytes());
+  let aead = Aes128Gcm::new(final_key);
 
   check_directory_exists()?;
   check_files()?;
@@ -38,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   let mut terminal = Terminal::new(backend)?;
   terminal.hide_cursor()?;
 
-  if let Err(error) = app::run(&mut terminal, u8_key) {
+  if let Err(error) = app::run(&mut terminal, aead) {
     terminal.show_cursor()?;
     println!("Error rendering table: {}", error);
   }

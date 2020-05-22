@@ -9,11 +9,12 @@ use crate::util::json_utils::{read_config, read_passwords};
 use crate::util::ui;
 use crate::util::ui::Backend;
 use crate::util::utils::build_table_rows;
+use aes_gcm::Aes128Gcm;
 
-pub fn run(terminal: &mut Terminal<Backend>, key: u8) -> Result<(), Box<dyn Error>> {
+pub fn run(terminal: &mut Terminal<Backend>, key: Aes128Gcm) -> Result<(), Box<dyn Error>> {
   let events = Events::new();
   let mut table = StatefulPasswordTable::new(key);
-  table.items = build_table_rows(read_passwords()?, key);
+  table.items = build_table_rows(read_passwords()?);
 
   while table.active {
     // Reading the config in the loop allows for live editing of colours/style/etc.
