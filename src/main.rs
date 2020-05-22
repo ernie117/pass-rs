@@ -1,7 +1,6 @@
 use std::error::Error;
 use std::io;
 use std::io::prelude::*;
-use base64::decode;
 
 use termion::input::MouseTerminal;
 use termion::raw::IntoRawMode;
@@ -9,10 +8,10 @@ use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::Terminal;
 
-use crate::util::json_utils::{check_directory_exists, check_files, write_new_password};
-use crate::util::utils::{verify_dev, decrypt, encrypt_known};
+use crate::util::json_utils::{check_directory_exists, check_files};
+use crate::util::utils::verify_dev;
 use aes_gcm::Aes128Gcm;
-use aead::{Aead, NewAead, generic_array::GenericArray};
+use aead::{NewAead, generic_array::GenericArray};
 
 mod app;
 mod stateful_table;
@@ -50,12 +49,6 @@ fn main() -> Result<(), Box<dyn Error>> {
   }
 
   terminal.show_cursor()?;
-
-  // write_new_password("testing", "password", key.as_bytes());
-  // let thing = decrypt("LCg3S8mBFw946JaMD8GB+EpowACYQvJ2", key.as_bytes(), &decode("dmxEVGFMQUxEamYy")?);
-  // println!("{:?}", thing);
-  // println!("{:?}", String::from_utf8_lossy(&decode("dmxEVGFMQUxEamYy").expect("problems")));
-  // println!("{:?}", encrypt_known("password", &aead, "HUUP0FAGadQh"));
 
   Ok(())
 }

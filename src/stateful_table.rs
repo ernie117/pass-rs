@@ -2,9 +2,7 @@ use crate::util::json_utils::read_passwords;
 use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known};
 use std::error::Error;
 use tui::widgets::TableState;
-use base64::decode;
 use aes_gcm::Aes128Gcm;
-use generic_array::GenericArray;
 
 #[derive(Copy, Clone)]
 pub enum CurrentMode {

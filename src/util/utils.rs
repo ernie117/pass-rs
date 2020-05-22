@@ -5,7 +5,7 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 
 use aes_gcm::Aes128Gcm; // Or `Aes256Gcm`
-use aead::{Aead, NewAead, generic_array::GenericArray};
+use aead::{Aead, generic_array::GenericArray};
 
 use rand::Rng;
 use rand::distributions::Alphanumeric;
@@ -13,7 +13,6 @@ use rand::distributions::Alphanumeric;
 use base64::{encode, decode};
 
 use super::json_utils::PasswordEntry;
-use std::convert::TryInto;
 
 #[inline]
 pub fn build_table_rows(map: HashMap<String, PasswordEntry>) -> Vec<Vec<String>> {
