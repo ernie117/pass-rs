@@ -84,7 +84,7 @@ pub fn write_new_password(
 
 pub fn delete_password(username_key: &str) -> Result<bool, Box<dyn Error>> {
   let bufreader = read_json_file("passwords")?;
-  let mut map: HashMap<String, String> = match serde_json::from_reader(bufreader) {
+  let mut map: HashMap<String, PasswordEntry> = match serde_json::from_reader(bufreader) {
     Ok(s) => s,
     Err(e) => panic!("Error serializing from reader: {}", e),
   };
