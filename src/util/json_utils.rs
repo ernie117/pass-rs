@@ -1,16 +1,16 @@
 use crate::util::configs::{CursesConfigs, RawConfigs};
 use crate::util::utils::encrypt;
+use aes_gcm::Aes128Gcm;
+use base64::encode;
 use dirs::home_dir;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
-use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Write};
 use std::path::Path;
-use base64::encode;
-use aes_gcm::Aes128Gcm;
 
 #[derive(Hash, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct PasswordEntry {
@@ -20,7 +20,10 @@ pub struct PasswordEntry {
 
 impl PasswordEntry {
   fn new(new_password: String, new_nonce: String) -> Self {
-    PasswordEntry { password: new_password, nonce: new_nonce }
+    PasswordEntry {
+      password: new_password,
+      nonce: new_nonce,
+    }
   }
 }
 

@@ -4,27 +4,21 @@ use std::ffi::OsString;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
+use aead::{generic_array::GenericArray, Aead};
 use aes_gcm::Aes128Gcm; // Or `Aes256Gcm`
-use aead::{Aead, generic_array::GenericArray};
 
-use rand::Rng;
 use rand::distributions::Alphanumeric;
+use rand::Rng;
 
-use base64::{encode, decode};
+use base64::{decode, encode};
 
 use super::json_utils::PasswordEntry;
 
 #[inline]
 pub fn build_table_rows(map: HashMap<String, PasswordEntry>) -> Vec<Vec<String>> {
   let mut vec_of_vecs = Vec::new();
-  for (key, value) in map {
-    vec_of_vecs.push(
-      vec![
-      key,
-      value.password,
-      value.nonce
-    ]
-    );
+  for (key, password_entry) in map {
+    vec_of_vecs.push(vec![key, password_entry.password, password_entry.nonce]);
   }
 
   vec_of_vecs.sort();
@@ -61,20 +55,35 @@ pub fn encrypt<'a>(password: &'a str, aead: &'a Aes128Gcm) -> (Vec<u8>, String) 
     .take(12)
     .collect();
 
-  let cipher_text = aead.encrypt(GenericArray::from_slice(nonce.as_bytes()), password.as_bytes().as_ref()).unwrap();
+  let cipher_text = aead
+    .encrypt(
+      GenericArray::from_slice(nonce.as_bytes()),
+      password.as_bytes().as_ref(),
+    )
+    .unwrap();
 
   (cipher_text, nonce)
 }
 
 pub fn encrypt_known(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
-  let cipher_text = aead.encrypt(GenericArray::from_slice(nonce.as_bytes()), password.as_bytes().as_ref()).unwrap();
+  let cipher_text = aead
+    .encrypt(
+      GenericArray::from_slice(nonce.as_bytes()),
+      password.as_bytes().as_ref(),
+    )
+    .unwrap();
 
   encode(cipher_text)
 }
 
 pub fn decrypt(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
   let decoded_password = decode(password.as_bytes()).unwrap();
-  let decrypted = aead.decrypt(GenericArray::from_slice(nonce.as_bytes()), decoded_password.as_ref()).expect("decryption failure!");
+  let decrypted = aead
+    .decrypt(
+      GenericArray::from_slice(nonce.as_bytes()),
+      decoded_password.as_ref(),
+    )
+    .expect("decryption failure!");
   String::from_utf8(decrypted).unwrap()
 }
 
@@ -90,7 +99,7 @@ pub fn verify_dev() -> bool {
   };
 
   match raw_password.as_os_str().to_str() {
-    Some(_s) => {},
+    Some(_s) => {}
     None => return false,
   }
 
@@ -105,4 +114,3 @@ pub fn verify_dev() -> bool {
 
   argon2::verify_encoded(final_password, raw_password_bytes).unwrap()
 }
-

@@ -10,8 +10,8 @@ use tui::Terminal;
 
 use crate::util::json_utils::{check_directory_exists, check_files};
 use crate::util::utils::verify_dev;
+use aead::{generic_array::GenericArray, NewAead};
 use aes_gcm::Aes128Gcm;
-use aead::{NewAead, generic_array::GenericArray};
 
 mod app;
 mod stateful_table;

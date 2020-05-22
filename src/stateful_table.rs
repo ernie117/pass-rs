@@ -1,8 +1,8 @@
 use crate::util::json_utils::read_passwords;
 use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known};
+use aes_gcm::Aes128Gcm;
 use std::error::Error;
 use tui::widgets::TableState;
-use aes_gcm::Aes128Gcm;
 
 #[derive(Copy, Clone)]
 pub enum CurrentMode {
@@ -110,7 +110,9 @@ impl StatefulPasswordTable {
         self.decrypted = false;
         self.items[i][1] = encrypt_known(&self.items[i][1], &self.key, &self.items[i][2]);
       } else {
-        if let Err(error) = copy_to_clipboard(&decrypt(&self.items[i][1], &self.key, &self.items[i][2])) {
+        if let Err(error) =
+          copy_to_clipboard(&decrypt(&self.items[i][1], &self.key, &self.items[i][2]))
+        {
           panic!("Error copying to clipboard: {}", error);
         }
       }
