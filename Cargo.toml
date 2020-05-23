@@ -22,3 +22,7 @@ generic-array = "0.14.1"
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
+
+[[bin]]
+name = "psc"
+path = "src/main.rs"
