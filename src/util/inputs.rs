@@ -58,6 +58,7 @@ pub fn add_password_input_handler(
         table.input.clear();
         table.new_username.clear();
       }
+      // TODO Need to check whether a password currently exists for the given service.
       Key::Char('\n') => {
         if table.input.is_empty() {
           ()
