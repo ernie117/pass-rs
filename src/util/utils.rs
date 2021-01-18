@@ -30,7 +30,7 @@ static EFFECTS: [&str; 8] = [
 
 static HELP_MSG_SPACING: usize = 40;
 
-#[derive(Hash, Eq, PartialEq, Debug)]
+#[derive(Hash, Eq, PartialEq, Debug, Clone)]
 pub struct TableEntry {
     pub(crate) service: String,
     pub(crate) password: String,
@@ -47,14 +47,46 @@ impl TableEntry {
     }
 }
 
+impl IntoIterator for TableEntry {
+    type Item = String;
+    type IntoIter = TableEntryIterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        TableEntryIterator {
+            entry: self,
+            curr: 0,
+        }
+    }
+}
+
+pub struct TableEntryIterator {
+    entry: TableEntry,
+    curr: usize,
+}
+
+impl Iterator for TableEntryIterator {
+    type Item = String;
+
+    fn next(&mut self) -> Option<String> {
+        let next = match self.curr {
+            0 => &self.entry.service,
+            1 => &self.entry.password,
+            2 => &self.entry.nonce,
+            _ => return None,
+        };
+        self.curr += 1;
+        Some(String::from(next))
+    }
+}
+
 #[inline]
-pub fn build_table_rows(map: HashMap<String, PasswordEntry>) -> Vec<Vec<String>> {
+pub fn build_table_rows(map: HashMap<String, PasswordEntry>) -> Vec<TableEntry> {
     let mut vec_of_vecs = Vec::new();
     for (key, password_entry) in map {
-        vec_of_vecs.push(vec![key, password_entry.password, password_entry.nonce]);
+        vec_of_vecs.push(TableEntry::new(key, password_entry.password, password_entry.nonce));
     }
 
-    vec_of_vecs.sort();
+    vec_of_vecs.sort_by(|a, b| a.service.partial_cmp(&b.service).unwrap());
 
     vec_of_vecs
 }

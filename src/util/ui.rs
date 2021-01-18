@@ -1,7 +1,7 @@
 use crate::util::banner::BANNER;
 use crate::util::configs::CursesConfigs;
 use crate::util::stateful_table::CurrentMode;
-use crate::util::utils::build_help_messages;
+use crate::util::utils::{TableEntry, build_help_messages};
 use std::io::Stdout;
 use termion::input::MouseTerminal;
 use termion::raw::RawTerminal;
@@ -35,7 +35,7 @@ static BANNER_HEIGHT: u16 = 12;
 /// Draws the main view including the password table and banner.
 pub fn draw_table(
     table_state: &mut TableState,
-    table_items: &Vec<Vec<String>>,
+    table_items: &Vec<TableEntry>,
     cfg: &CursesConfigs,
     f: &mut Frame<Backend>,
     table_decrypted: &bool,
@@ -83,7 +83,12 @@ pub fn draw_table(
             height: BOX_HEIGHT,
         });
 
-    let rows = table_items
+    let vec_entries: Vec<Vec<_>> = table_items
+        .iter()
+        .map(|e| vec![&e.service, &e.password, &e.nonce])
+        .collect();
+
+    let rows = vec_entries
         .iter()
         .map(|i| Row::StyledData(i.into_iter(), row_style));
 
