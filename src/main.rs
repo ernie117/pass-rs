@@ -8,8 +8,8 @@ use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::Terminal;
 
-use aes_gcm::{Aes128Gcm, NewAead};
 use aes_gcm::aead::generic_array::GenericArray;
+use aes_gcm::{Aes128Gcm, NewAead};
 
 mod app;
 // mod stateful_table;

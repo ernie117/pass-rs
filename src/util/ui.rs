@@ -9,8 +9,8 @@ use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Borders, Cell, List, Paragraph, Row, Table, TableState, Wrap};
 use tui::text::{Span, Spans, Text};
+use tui::widgets::{Block, Borders, Cell, List, Paragraph, Row, Table, TableState, Wrap};
 use tui::Frame;
 
 pub type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>;
@@ -56,7 +56,7 @@ pub fn draw_table(
                 Constraint::Length(12),
                 Constraint::Min(1),
             ]
-            .as_ref()
+            .as_ref(),
         )
         .split(Rect {
             x: (f.size().width / 2) - BOX_WIDTH / 2,
@@ -68,7 +68,11 @@ pub fn draw_table(
     let banner = Spans::from(vec![Span::raw(BANNER)]);
     let banner_box = Paragraph::new(banner)
         .block(Block::default().borders(Borders::NONE))
-        .style(Style::default().fg(highlight_colour).add_modifier(Modifier::BOLD))
+        .style(
+            Style::default()
+                .fg(highlight_colour)
+                .add_modifier(Modifier::BOLD),
+        )
         .wrap(Wrap { trim: false });
     f.render_widget(banner_box, chunks[1]);
 
@@ -86,13 +90,10 @@ pub fn draw_table(
         .map(|e| vec![&e.service, &e.password, &e.nonce])
         .collect();
 
-    let rows = vec_entries
-        .iter()
-        .map(|i| {
-            let cells = i.iter().map(|i| Cell::from(Span::raw(*i)));
-            Row::new(cells)
-        }
-        );
+    let rows = vec_entries.iter().map(|i| {
+        let cells = i.iter().map(|i| Cell::from(Span::raw(*i)));
+        Row::new(cells)
+    });
 
     let header_cells = ["Username", "Password"]
         .iter()
@@ -104,7 +105,10 @@ pub fn draw_table(
         .header(header)
         .block(
             Block::default()
-                .title(Span::styled("Passwords", Style::default().add_modifier(cfg.title_style)))
+                .title(Span::styled(
+                    "Passwords",
+                    Style::default().add_modifier(cfg.title_style),
+                ))
                 .borders(Borders::ALL)
                 .border_type(cfg.border_type)
                 .border_style(Style::default().add_modifier(cfg.border_style)),
@@ -146,8 +150,7 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
         });
 
     let messages = build_help_messages();
-    let help =
-        List::new(messages).block(Block::default().borders(Borders::ALL).title("Help"));
+    let help = List::new(messages).block(Block::default().borders(Borders::ALL).title("Help"));
 
     f.render_widget(help, rects[0]);
 }

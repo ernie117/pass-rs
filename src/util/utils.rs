@@ -7,8 +7,8 @@ use tui::style::{Modifier, Style};
 use tui::text::Text;
 use tui::widgets::ListItem;
 
-use aes_gcm::Aes128Gcm; // Or `Aes256Gcm`
 use aes_gcm::aead::{generic_array::GenericArray, Aead};
+use aes_gcm::Aes128Gcm; // Or `Aes256Gcm`
 
 use rand::distributions::Alphanumeric;
 use rand::Rng;
