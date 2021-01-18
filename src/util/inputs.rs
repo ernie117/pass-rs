@@ -105,9 +105,11 @@ pub fn add_password_input_handler(
             }
             _ => {}
         },
-        CurrentMode::PasswordCreated => if let Key::Esc = key {
-            table.current_mode = CurrentMode::Normal;
-        },
+        CurrentMode::PasswordCreated => {
+            if let Key::Esc = key {
+                table.current_mode = CurrentMode::Normal;
+            }
+        }
         _ => {}
     }
     Ok(())
@@ -144,12 +146,16 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
             }
             _ => {}
         },
-        CurrentMode::PasswordDeleted => if let Key::Esc = key {
-            table.current_mode = CurrentMode::Normal;
-        },
-        CurrentMode::NoSuchPassword => if let Key::Esc = key {
-            table.current_mode = CurrentMode::Normal;
-        },
+        CurrentMode::PasswordDeleted => {
+            if let Key::Esc = key {
+                table.current_mode = CurrentMode::Normal;
+            }
+        }
+        CurrentMode::NoSuchPassword => {
+            if let Key::Esc = key {
+                table.current_mode = CurrentMode::Normal;
+            }
+        }
         _ => {}
     }
 }

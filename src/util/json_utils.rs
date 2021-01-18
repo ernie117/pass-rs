@@ -97,7 +97,9 @@ pub fn delete_password(username_key: &str) -> Result<bool, Box<dyn Error>> {
     };
 
     let result = map.remove_entry(username_key);
-    if result.is_none() { return Ok(false) }
+    if result.is_none() {
+        return Ok(false);
+    }
 
     let new_passwords = serde_json::to_string_pretty(&map)?;
 

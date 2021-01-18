@@ -89,7 +89,7 @@ impl StatefulPasswordTable {
             // So we don't subscript an array that's empty.
             return;
         }
-        if let Some(i) =  self.state.selected() {
+        if let Some(i) = self.state.selected() {
             if self.decrypted {
                 self.decrypted = false;
                 self.items[i].password =
