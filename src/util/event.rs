@@ -8,70 +8,70 @@ use termion::event::Key;
 use termion::input::TermRead;
 
 pub enum Event<I> {
-  Input(I),
-  Tick,
+    Input(I),
+    Tick,
 }
 
 pub struct Events {
-  rx: mpsc::Receiver<Event<Key>>,
-  input_handle: thread::JoinHandle<()>,
-  tick_handle: thread::JoinHandle<()>,
+    rx: mpsc::Receiver<Event<Key>>,
+    input_handle: thread::JoinHandle<()>,
+    tick_handle: thread::JoinHandle<()>,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Config {
-  pub tick_rate: Duration,
+    pub tick_rate: Duration,
 }
 
 impl Default for Config {
-  fn default() -> Config {
-    Config {
-      tick_rate: Duration::from_millis(250),
+    fn default() -> Config {
+        Config {
+            tick_rate: Duration::from_millis(250),
+        }
     }
-  }
 }
 
 impl Events {
-  pub fn new() -> Events {
-    Events::with_config(Config::default())
-  }
-
-  pub fn with_config(config: Config) -> Events {
-    let (tx, rx) = mpsc::channel();
-    let input_handle = {
-      let tx = tx.clone();
-      thread::spawn(move || {
-        let stdin = io::stdin();
-        for evt in stdin.keys() {
-          match evt {
-            Ok(key) => {
-              if let Err(_) = tx.send(Event::Input(key)) {
-                return;
-              }
-            }
-            Err(_) => {}
-          }
-        }
-      })
-    };
-    let tick_handle = {
-      let tx = tx.clone();
-      thread::spawn(move || {
-        let tx = tx.clone();
-        loop {
-          tx.send(Event::Tick).unwrap();
-          thread::sleep(config.tick_rate);
-        }
-      })
-    };
-    Events {
-      rx,
-      input_handle,
-      tick_handle,
+    pub fn new() -> Events {
+        Events::with_config(Config::default())
     }
-  }
 
-  pub fn next(&self) -> Result<Event<Key>, mpsc::RecvError> {
-    self.rx.recv()
-  }
+    pub fn with_config(config: Config) -> Events {
+        let (tx, rx) = mpsc::channel();
+        let input_handle = {
+            let tx = tx.clone();
+            thread::spawn(move || {
+                let stdin = io::stdin();
+                for evt in stdin.keys() {
+                    match evt {
+                        Ok(key) => {
+                            if let Err(_) = tx.send(Event::Input(key)) {
+                                return;
+                            }
+                        }
+                        Err(_) => {}
+                    }
+                }
+            })
+        };
+        let tick_handle = {
+            let tx = tx.clone();
+            thread::spawn(move || {
+                let tx = tx.clone();
+                loop {
+                    tx.send(Event::Tick).unwrap();
+                    thread::sleep(config.tick_rate);
+                }
+            })
+        };
+        Events {
+            rx,
+            input_handle,
+            tick_handle,
+        }
+    }
+
+    pub fn next(&self) -> Result<Event<Key>, mpsc::RecvError> {
+        self.rx.recv()
+    }
 }
