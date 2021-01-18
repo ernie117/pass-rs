@@ -1,5 +1,5 @@
 use crate::util::json_utils::read_passwords;
-use crate::util::utils::{TableEntry, build_table_rows, copy_to_clipboard, decrypt, encrypt_known};
+use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known, TableEntry};
 use aes_gcm::Aes128Gcm;
 use std::error::Error;
 use tui::widgets::TableState;
@@ -85,22 +85,20 @@ impl StatefulPasswordTable {
     }
 
     pub fn decrypt(&mut self) {
-        if self.items.len() == 0 {
+        if self.items.is_empty() {
             // So we don't subscript an array that's empty.
             return;
         }
-        match self.state.selected() {
-            Some(i) => {
-                if self.decrypted {
-                    self.decrypted = false;
-                    self.items[i].password =
-                        encrypt_known(&self.items[i].password, &self.key, &self.items[i].nonce);
-                } else {
-                    self.decrypted = true;
-                    self.items[i].password = decrypt(&self.items[i].password, &self.key, &self.items[i].nonce);
-                }
+        if let Some(i) =  self.state.selected() {
+            if self.decrypted {
+                self.decrypted = false;
+                self.items[i].password =
+                    encrypt_known(&self.items[i].password, &self.key, &self.items[i].nonce);
+            } else {
+                self.decrypted = true;
+                self.items[i].password =
+                    decrypt(&self.items[i].password, &self.key, &self.items[i].nonce);
             }
-            None => (),
         };
     }
 
@@ -111,13 +109,14 @@ impl StatefulPasswordTable {
                     panic!("Error copying to clipboard: {}", error);
                 }
                 self.decrypted = false;
-                self.items[i].password = encrypt_known(&self.items[i].password, &self.key, &self.items[i].nonce);
-            } else {
-                if let Err(error) =
-                    copy_to_clipboard(&decrypt(&self.items[i].password, &self.key, &self.items[i].nonce))
-                {
-                    panic!("Error copying to clipboard: {}", error);
-                }
+                self.items[i].password =
+                    encrypt_known(&self.items[i].password, &self.key, &self.items[i].nonce);
+            } else if let Err(error) = copy_to_clipboard(&decrypt(
+                &self.items[i].password,
+                &self.key,
+                &self.items[i].nonce,
+            )) {
+                panic!("Error copying to clipboard: {}", error);
             }
         }
     }

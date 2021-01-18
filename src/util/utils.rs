@@ -83,7 +83,11 @@ impl Iterator for TableEntryIterator {
 pub fn build_table_rows(map: HashMap<String, PasswordEntry>) -> Vec<TableEntry> {
     let mut vec_of_vecs = Vec::new();
     for (key, password_entry) in map {
-        vec_of_vecs.push(TableEntry::new(key, password_entry.password, password_entry.nonce));
+        vec_of_vecs.push(TableEntry::new(
+            key,
+            password_entry.password,
+            password_entry.nonce,
+        ));
     }
 
     vec_of_vecs.sort_by(|a, b| a.service.partial_cmp(&b.service).unwrap());

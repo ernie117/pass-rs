@@ -1,7 +1,7 @@
 use crate::util::banner::BANNER;
 use crate::util::configs::CursesConfigs;
 use crate::util::stateful_table::CurrentMode;
-use crate::util::utils::{TableEntry, build_help_messages};
+use crate::util::utils::{build_help_messages, TableEntry};
 use std::io::Stdout;
 use termion::input::MouseTerminal;
 use termion::raw::RawTerminal;
@@ -16,7 +16,7 @@ pub type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdo
 
 static NEW_USERNAME_TITLE: &str = "Enter a new username. Press Esc to cancel";
 static NEW_PASSWORD_TITLE: &str = "Enter a new password. Press Esc to cancel";
-static PASSWORD_CREATED: &str = "Password created! Press Esc to go close";
+static PASSWORD_CREATED: &str = "Password created! Press Esc to close";
 static DELETE_PASSWORD: &str = "Enter username of password to delete. Press Esc to cancel";
 static PASSWORD_DELETED: &str = "Password deleted! Press Esc to close";
 static NO_SUCH_PASSWORD: &str = "No such password! Press Esc to close";
@@ -35,7 +35,7 @@ static BANNER_HEIGHT: u16 = 12;
 /// Draws the main view including the password table and banner.
 pub fn draw_table(
     table_state: &mut TableState,
-    table_items: &Vec<TableEntry>,
+    table_items: &[TableEntry],
     cfg: &CursesConfigs,
     f: &mut Frame<Backend>,
     table_decrypted: &bool,
@@ -90,7 +90,7 @@ pub fn draw_table(
 
     let rows = vec_entries
         .iter()
-        .map(|i| Row::StyledData(i.into_iter(), row_style));
+        .map(|i| Row::StyledData(i.iter(), row_style));
 
     let t = Table::new(["Username", "Password"].iter(), rows)
         .block(
@@ -148,7 +148,7 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
 pub fn draw_add_delete_password(
     f: &mut Frame<Backend>,
     current_mode: &CurrentMode,
-    table_input: &String,
+    table_input: &str,
 ) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)

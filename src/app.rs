@@ -53,28 +53,26 @@ pub fn run(terminal: &mut Terminal<Backend>, key: Aes128Gcm) -> Result<(), Box<d
         })?;
 
         match table.current_mode {
-            CurrentMode::Normal | CurrentMode::WithHelp => match events.next()? {
-                Event::Input(key) => {
+            CurrentMode::Normal | CurrentMode::WithHelp => {
+                if let Event::Input(key) = events.next()? {
                     inputs::password_table_input_handler(&mut table, key);
                 }
-                _ => {}
-            },
-            CurrentMode::NewUserName | CurrentMode::NewPassword | CurrentMode::PasswordCreated => {
-                match events.next()? {
-                    Event::Input(key) => {
-                        inputs::add_password_input_handler(&mut table, key)?;
-                    }
-                    _ => {}
-                }
             }
+            #[rustfmt::skip]
+            CurrentMode::NewUserName
+            | CurrentMode::NewPassword
+            | CurrentMode::PasswordCreated => {
+                if let Event::Input(key) = events.next()? {
+                    inputs::add_password_input_handler(&mut table, key)?;
+                }
+            },
             CurrentMode::DeletePassword
             | CurrentMode::PasswordDeleted
-            | CurrentMode::NoSuchPassword => match events.next()? {
-                Event::Input(key) => {
+            | CurrentMode::NoSuchPassword => {
+                if let Event::Input(key) = events.next()? {
                     inputs::delete_password_input_handler(&mut table, key);
                 }
-                _ => {}
-            },
+            }
         }
     }
 

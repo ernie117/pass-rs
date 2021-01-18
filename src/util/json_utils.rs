@@ -54,7 +54,7 @@ pub fn read_config() -> Result<CursesConfigs, Box<dyn Error>> {
 
 #[inline]
 pub fn read_json_file(path: &str) -> Result<BufReader<File>, Box<dyn Error>> {
-    let full_path = format!("{}/{}.json", get_home_dir()?, path);
+    let full_path = format!("{}/{}.json", get_home_dir(), path);
     let file = OpenOptions::new().read(true).write(true).open(&full_path)?;
 
     Ok(BufReader::new(file))
@@ -78,7 +78,7 @@ pub fn write_new_password(
 
     let new_passwords = serde_json::to_string_pretty(&map)?;
 
-    let passwords_path = format!("{}/{}.json", &get_home_dir()?, "passwords");
+    let passwords_path = format!("{}/{}.json", &get_home_dir(), "passwords");
     let mut file = OpenOptions::new()
         .write(true)
         .truncate(true)
@@ -97,14 +97,11 @@ pub fn delete_password(username_key: &str) -> Result<bool, Box<dyn Error>> {
     };
 
     let result = map.remove_entry(username_key);
-    match result {
-        None => return Ok(false),
-        _ => {}
-    };
+    if result.is_none() { return Ok(false) }
 
     let new_passwords = serde_json::to_string_pretty(&map)?;
 
-    let passwords_path = format!("{}/{}.json", &get_home_dir()?, "passwords");
+    let passwords_path = format!("{}/{}.json", &get_home_dir(), "passwords");
     let mut file = OpenOptions::new()
         .write(true)
         .truncate(true)
@@ -117,8 +114,8 @@ pub fn delete_password(username_key: &str) -> Result<bool, Box<dyn Error>> {
 
 #[inline]
 pub fn check_directory_exists() -> Result<(), Box<dyn Error>> {
-    if !Path::new(&get_home_dir()?).exists() {
-        match fs::create_dir(get_home_dir()?) {
+    if !Path::new(&get_home_dir()).exists() {
+        match fs::create_dir(get_home_dir()) {
             Ok(_s) => {}
             Err(e) => panic!("Could not create passcurses directory: {}", e),
         }
@@ -128,11 +125,11 @@ pub fn check_directory_exists() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn check_files() -> Result<(), Box<dyn Error>> {
-    let passwords_path = format!("{}/{}.json", &get_home_dir()?, "passwords");
+    let passwords_path = format!("{}/{}.json", &get_home_dir(), "passwords");
     if !Path::new(&passwords_path).exists() {
         populate_new_file("passwords", passwords_path)?;
     }
-    let config_path = format!("{}/{}.json", &get_home_dir()?, "config");
+    let config_path = format!("{}/{}.json", &get_home_dir(), "config");
     if !Path::new(&config_path).exists() {
         populate_new_file("config", config_path)?;
     }
@@ -165,6 +162,6 @@ fn populate_new_file(file_type: &str, path: String) -> Result<(), Box<dyn Error>
 }
 
 #[inline]
-fn get_home_dir() -> Result<String, Box<dyn Error>> {
-    Ok(home_dir().unwrap().into_os_string().into_string().unwrap() + "/.passcurses")
+fn get_home_dir() -> String {
+    home_dir().unwrap().into_os_string().into_string().unwrap() + "/.passcurses"
 }

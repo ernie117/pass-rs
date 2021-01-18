@@ -61,7 +61,7 @@ pub fn add_password_input_handler(
             // TODO Need to check whether a password currently exists for the given service.
             Key::Char('\n') => {
                 if table.input.is_empty() {
-                    ()
+                    // do nothing
                 }
                 table.new_username.push_str(&table.input);
                 table.input.clear();
@@ -84,7 +84,7 @@ pub fn add_password_input_handler(
             }
             Key::Char('\n') => {
                 if table.input.is_empty() {
-                    ()
+                    // do nothing
                 }
                 table.new_password.push_str(&table.input);
                 table.input.clear();
@@ -105,11 +105,8 @@ pub fn add_password_input_handler(
             }
             _ => {}
         },
-        CurrentMode::PasswordCreated => match key {
-            Key::Esc => {
-                table.current_mode = CurrentMode::Normal;
-            }
-            _ => {}
+        CurrentMode::PasswordCreated => if let Key::Esc = key {
+            table.current_mode = CurrentMode::Normal;
         },
         _ => {}
     }
@@ -147,17 +144,11 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
             }
             _ => {}
         },
-        CurrentMode::PasswordDeleted => match key {
-            Key::Esc => {
-                table.current_mode = CurrentMode::Normal;
-            }
-            _ => {}
+        CurrentMode::PasswordDeleted => if let Key::Esc = key {
+            table.current_mode = CurrentMode::Normal;
         },
-        CurrentMode::NoSuchPassword => match key {
-            Key::Esc => {
-                table.current_mode = CurrentMode::Normal;
-            }
-            _ => {}
+        CurrentMode::NoSuchPassword => if let Key::Esc = key {
+            table.current_mode = CurrentMode::Normal;
         },
         _ => {}
     }
