@@ -4,10 +4,11 @@ use std::ffi::OsString;
 use std::io::Write;
 use std::process::{Command, Stdio};
 use tui::style::{Modifier, Style};
-use tui::widgets::Text;
+use tui::text::Text;
+use tui::widgets::ListItem;
 
-use aead::{generic_array::GenericArray, Aead};
 use aes_gcm::Aes128Gcm; // Or `Aes256Gcm`
+use aes_gcm::aead::{generic_array::GenericArray, Aead};
 
 use rand::distributions::Alphanumeric;
 use rand::Rng;
@@ -88,19 +89,19 @@ pub fn copy_to_clipboard(string_to_copy: &str) -> Result<(), Box<dyn Error>> {
 
 #[inline]
 pub fn encrypt(password: &str, aead: &Aes128Gcm) -> (Vec<u8>, String) {
-    let nonce: String = rand::thread_rng()
+    let nonce: Vec<u8> = rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(12)
         .collect();
 
     let cipher_text = aead
         .encrypt(
-            GenericArray::from_slice(nonce.as_bytes()),
+            GenericArray::from_slice(&nonce),
             password.as_bytes().as_ref(),
         )
         .unwrap();
 
-    (cipher_text, nonce)
+    (cipher_text, String::from_utf8(nonce).unwrap())
 }
 
 #[inline]
@@ -156,7 +157,7 @@ pub fn verify_dev() -> bool {
 }
 
 #[inline]
-pub fn build_help_messages() -> Vec<Text<'static>> {
+pub fn build_help_messages() -> Vec<ListItem<'static>> {
     let zipped_help = BUTTONS.iter().zip(EFFECTS.iter());
 
     let mut messages = Vec::new();
@@ -169,10 +170,10 @@ pub fn build_help_messages() -> Vec<Text<'static>> {
             effect,
             spacing = spacing as usize
         );
-        messages.push(Text::styled(
+        messages.push(ListItem::new(Text::styled(
             format!("{:^69}", main_str),
-            Style::default().modifier(Modifier::ITALIC),
-        ));
+            Style::default().add_modifier(Modifier::ITALIC),
+        )));
     }
 
     messages

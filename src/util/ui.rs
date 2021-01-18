@@ -9,7 +9,8 @@ use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Borders, List, Paragraph, Row, Table, TableState, Text};
+use tui::widgets::{Block, Borders, Cell, List, Paragraph, Row, Table, TableState, Wrap};
+use tui::text::{Span, Spans, Text};
 use tui::Frame;
 
 pub type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>;
@@ -55,7 +56,7 @@ pub fn draw_table(
                 Constraint::Length(12),
                 Constraint::Min(1),
             ]
-            .as_ref(),
+            .as_ref()
         )
         .split(Rect {
             x: (f.size().width / 2) - BOX_WIDTH / 2,
@@ -64,16 +65,13 @@ pub fn draw_table(
             height: BANNER_HEIGHT,
         });
 
-    let banner = [Text::styled(
-        BANNER,
-        Style::default()
-            .fg(highlight_colour)
-            .modifier(Modifier::BOLD),
-    )];
-    let banner_box = Paragraph::new(banner.iter()).block(Block::default().borders(Borders::NONE));
+    let banner = Spans::from(vec![Span::raw(BANNER)]);
+    let banner_box = Paragraph::new(banner)
+        .block(Block::default().borders(Borders::NONE))
+        .style(Style::default().fg(highlight_colour).add_modifier(Modifier::BOLD))
+        .wrap(Wrap { trim: false });
     f.render_widget(banner_box, chunks[1]);
 
-    let row_style = Style::default().fg(Color::White);
     let rects = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
         .split(Rect {
@@ -90,18 +88,27 @@ pub fn draw_table(
 
     let rows = vec_entries
         .iter()
-        .map(|i| Row::StyledData(i.iter(), row_style));
+        .map(|i| {
+            let cells = i.iter().map(|i| Cell::from(Span::raw(*i)));
+            Row::new(cells)
+        }
+        );
 
-    let t = Table::new(["Username", "Password"].iter(), rows)
+    let header_cells = ["Username", "Password"]
+        .iter()
+        .map(|h| Cell::from(*h).style(Style::default().add_modifier(cfg.title_style)));
+
+    let header = Row::new(header_cells).style(Style::default().fg(Color::Yellow));
+
+    let t = Table::new(rows)
+        .header(header)
         .block(
             Block::default()
-                .title("Passwords")
-                .title_style(Style::default().modifier(cfg.title_style))
+                .title(Span::styled("Passwords", Style::default().add_modifier(cfg.title_style)))
                 .borders(Borders::ALL)
                 .border_type(cfg.border_type)
-                .border_style(Style::default().modifier(cfg.border_style)),
+                .border_style(Style::default().add_modifier(cfg.border_style)),
         )
-        .header_style(Style::default().fg(Color::Yellow))
         .highlight_style(Style::default().fg(Color::Black).bg(highlight_colour))
         .widths(&[Constraint::Length(35), Constraint::Length(35)])
         .style(Style::default().fg(Color::White))
@@ -118,9 +125,9 @@ pub fn draw_table(
             height: HELP_PROMPT_HEIGHT,
         });
 
-    let text = [Text::raw("? for help")];
+    let text = vec![Span::raw("? for help")];
     let block = Block::default().borders(Borders::NONE);
-    let paragraph = Paragraph::new(text.iter())
+    let paragraph = Paragraph::new(Spans::from(text))
         .block(block)
         .alignment(Alignment::Left);
 
@@ -140,7 +147,7 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
 
     let messages = build_help_messages();
     let help =
-        List::new(messages.into_iter()).block(Block::default().borders(Borders::ALL).title("Help"));
+        List::new(messages).block(Block::default().borders(Borders::ALL).title("Help"));
 
     f.render_widget(help, rects[0]);
 }
@@ -177,16 +184,16 @@ pub fn draw_add_delete_password(
         CurrentMode::NoSuchPassword => NO_SUCH_PASSWORD,
         _ => "Unknown mode",
     };
-    let text = [Text::styled(
+    let text = Text::styled(
         table_input,
         Style::default().fg(Color::Black).bg(Color::White),
-    )];
-    let input = Paragraph::new(text.iter())
+    );
+    let input = Paragraph::new(text)
         .style(
             Style::default()
                 .fg(Color::Black)
                 .bg(Color::Gray)
-                .modifier(Modifier::BOLD),
+                .add_modifier(Modifier::BOLD),
         )
         .block(
             Block::default()

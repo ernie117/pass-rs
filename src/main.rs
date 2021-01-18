@@ -8,8 +8,8 @@ use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::Terminal;
 
-use aead::{generic_array::GenericArray, NewAead};
-use aes_gcm::Aes128Gcm;
+use aes_gcm::{Aes128Gcm, NewAead};
+use aes_gcm::aead::generic_array::GenericArray;
 
 mod app;
 // mod stateful_table;
@@ -33,7 +33,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let final_key = GenericArray::clone_from_slice(key.as_bytes());
-    let aead = Aes128Gcm::new(final_key);
+    let aead = Aes128Gcm::new(&final_key);
 
     util::json_utils::check_directory_exists()?;
     util::json_utils::check_files()?;
