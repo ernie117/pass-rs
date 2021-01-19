@@ -195,19 +195,17 @@ pub fn draw_add_delete_password(
         CurrentMode::NoSuchPassword => NO_SUCH_PASSWORD,
         _ => "UNKNOWN MODE",
     };
-    let text = Text::styled(
-        table_input,
-        Style::default(),
-    );
+    let text = Text::styled(table_input, Style::default());
     let input = Paragraph::new(text)
-        .style(Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD))
+        .style(
+            Style::default()
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
+        )
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(
-                    Style::default()
-                        .add_modifier(Modifier::BOLD),
-                )
+                .border_style(Style::default().add_modifier(Modifier::BOLD))
                 .border_type(BorderType::Rounded)
                 .title(title)
                 .style(Style::default()),
