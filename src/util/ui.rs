@@ -10,7 +10,9 @@ use tui::backend::TermionBackend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans, Text};
-use tui::widgets::{Block, Borders, Cell, List, Paragraph, Row, Table, TableState, Wrap};
+use tui::widgets::{
+    Block, BorderType, Borders, Cell, Clear, List, Paragraph, Row, Table, TableState, Wrap,
+};
 use tui::Frame;
 
 pub type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>;
@@ -49,7 +51,7 @@ pub fn draw_table(
         Color::Red
     };
 
-    if let Some(_) = show_banner {
+    if show_banner.is_some() {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
@@ -82,11 +84,12 @@ pub fn draw_table(
 
     let rects = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
+        .margin(1)
         .split(Rect {
-            x: (f.size().width / 2) - BOX_WIDTH / 2,
-            y: (f.size().height / 2) - BOX_HEIGHT / 2,
-            width: BOX_WIDTH,
-            height: BOX_HEIGHT,
+            x: 0,
+            y: 0,
+            width: f.size().width,
+            height: f.size().height - 3,
         });
 
     let vec_entries: Vec<Vec<_>> = table_items
@@ -118,7 +121,7 @@ pub fn draw_table(
                 .border_style(Style::default().add_modifier(cfg.border_style)),
         )
         .highlight_style(Style::default().fg(Color::Black).bg(highlight_colour))
-        .widths(&[Constraint::Length(35), Constraint::Length(35)])
+        .widths(&[Constraint::Length(35), Constraint::Percentage(100)])
         .style(Style::default().fg(Color::White))
         .column_spacing(1);
 
@@ -127,17 +130,17 @@ pub fn draw_table(
     let rects_2 = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
         .split(Rect {
-            x: (f.size().width / 2) - BOX_WIDTH / 2,
-            y: ((f.size().height / 2) - BOX_HEIGHT / 2) + BOX_HEIGHT,
-            width: BOX_WIDTH,
+            x: 0,
+            y: f.size().height - 3,
+            width: f.size().width,
             height: HELP_PROMPT_HEIGHT,
         });
 
     let text = vec![Span::raw("? for help")];
-    let block = Block::default().borders(Borders::NONE);
+    let block = Block::default().borders(Borders::ALL);
     let paragraph = Paragraph::new(Spans::from(text))
         .block(block)
-        .alignment(Alignment::Left);
+        .alignment(Alignment::Right);
 
     f.render_widget(paragraph, rects_2[0]);
 }
@@ -175,12 +178,13 @@ pub fn draw_add_delete_password(
             ]
             .as_ref(),
         )
-        .split(Rect {
-            x: (f.size().width / 2) - ADD_DEL_PASSWORD_BOX_WIDTH / 2,
-            y: (f.size().height / 2) - (BOX_HEIGHT + 12) / 2,
-            width: ADD_DEL_PASSWORD_BOX_WIDTH,
-            height: ADD_DEL_PASSWORD_BOX_HEIGHT,
-        });
+        .split(f.size());
+    // .split(Rect {
+    //     x: (f.size().width / 2) - ADD_DEL_PASSWORD_BOX_WIDTH / 2,
+    //     y: (f.size().height / 2) - (BOX_HEIGHT + 12) / 2,
+    //     width: ADD_DEL_PASSWORD_BOX_WIDTH,
+    //     height: ADD_DEL_PASSWORD_BOX_HEIGHT,
+    // });
 
     let title = match current_mode {
         CurrentMode::NewUserName => NEW_USERNAME_TITLE,
@@ -193,21 +197,21 @@ pub fn draw_add_delete_password(
     };
     let text = Text::styled(
         table_input,
-        Style::default().fg(Color::White).bg(Color::Black),
+        Style::default(),
     );
     let input = Paragraph::new(text)
-        .style(
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::Gray)
-                .add_modifier(Modifier::BOLD),
-        )
+        .style(Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD))
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::White))
+                .border_style(
+                    Style::default()
+                        .add_modifier(Modifier::BOLD),
+                )
+                .border_type(BorderType::Rounded)
                 .title(title)
-                .style(Style::default().bg(Color::Black)),
+                .style(Style::default()),
         );
+    f.render_widget(Clear, chunks[1]); // Clears the background of the popup.
     f.render_widget(input, chunks[1]);
 }
