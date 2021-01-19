@@ -17,8 +17,8 @@ use base64::{decode, encode};
 
 use super::json_utils::PasswordEntry;
 
-static BUTTONS: [&str; 8] = ["j/down", "k/up", "y", "d", "r", "c", "D", "q"];
-static EFFECTS: [&str; 8] = [
+static BUTTONS: [&str; 9] = ["j/down", "k/up", "y", "d", "r", "c", "D", "?", "q"];
+static EFFECTS: [&str; 9] = [
     "move down",
     "move up",
     "copy password",
@@ -26,6 +26,7 @@ static EFFECTS: [&str; 8] = [
     "refresh passwords",
     "create new password",
     "delete password",
+    "hide/show help",
     "quit",
 ];
 
@@ -95,10 +96,7 @@ pub fn encrypt(password: &str, aead: &Aes128Gcm) -> (Vec<u8>, String) {
         .collect();
 
     let cipher_text = aead
-        .encrypt(
-            GenericArray::from_slice(&nonce),
-            password.as_bytes().as_ref(),
-        )
+        .encrypt(GenericArray::from_slice(&nonce), password.as_bytes())
         .unwrap();
 
     (cipher_text, String::from_utf8(nonce).unwrap())
@@ -109,7 +107,7 @@ pub fn encrypt_known(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
     let cipher_text = aead
         .encrypt(
             GenericArray::from_slice(nonce.as_bytes()),
-            password.as_bytes().as_ref(),
+            password.as_bytes(),
         )
         .unwrap();
 

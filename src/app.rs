@@ -27,35 +27,48 @@ pub fn run(terminal: &mut Terminal<Backend>, key: Aes128Gcm) -> Result<(), Box<d
         };
 
         terminal.draw(|mut f| {
-            ui::draw_table(
-                &mut table.state,
-                &table.items,
-                &cfg,
-                &mut f,
-                &table.decrypted,
-            );
             match table.current_mode {
+                CurrentMode::Normal => {
+                    ui::draw_table(
+                        &mut table.state,
+                        &table.items,
+                        &cfg,
+                        &mut f,
+                        &table.decrypted,
+                        None,
+                    );
+                }
                 CurrentMode::WithHelp => {
                     ui::draw_help_window(&mut f);
                 }
                 CurrentMode::NewPassword
                 | CurrentMode::NewUserName
-                | CurrentMode::PasswordCreated => {
-                    ui::draw_add_delete_password(&mut f, &table.current_mode, &table.input);
-                }
-                CurrentMode::DeletePassword
+                | CurrentMode::PasswordCreated
+                | CurrentMode::DeletePassword
                 | CurrentMode::PasswordDeleted
                 | CurrentMode::NoSuchPassword => {
+                    ui::draw_table(
+                        &mut table.state,
+                        &table.items,
+                        &cfg,
+                        &mut f,
+                        &table.decrypted,
+                        None
+                    );
                     ui::draw_add_delete_password(&mut f, &table.current_mode, &table.input);
                 }
-                _ => {}
             };
         })?;
 
         match table.current_mode {
-            CurrentMode::Normal | CurrentMode::WithHelp => {
+            CurrentMode::Normal => {
                 if let Event::Input(key) = events.next()? {
                     inputs::password_table_input_handler(&mut table, key);
+                }
+            }
+            CurrentMode::WithHelp => {
+                if let Event::Input(key) = events.next()? {
+                    inputs::with_help_input_handler(&mut table, key);
                 }
             }
             #[rustfmt::skip]

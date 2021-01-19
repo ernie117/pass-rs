@@ -27,19 +27,21 @@ static BOX_HEIGHT: u16 = 20;
 static HELP_PROMPT_HEIGHT: u16 = 3;
 static HELP_BOX_HEIGHT: u16 = 10;
 
-static ADD_DEL_PASSWORD_BOX_WIDTH: u16 = BOX_WIDTH + 10;
+static ADD_DEL_PASSWORD_BOX_WIDTH: u16 = BOX_WIDTH;
 static ADD_DEL_PASSWORD_BOX_HEIGHT: u16 = 8;
 
 static BANNER_LEN: u16 = 70;
-static BANNER_HEIGHT: u16 = 12;
+static BANNER_HEIGHT: u16 = 10;
 
-/// Draws the main view including the password table and banner.
+/// Draws the main view including the password table and, optionally,
+/// the banner.
 pub fn draw_table(
     table_state: &mut TableState,
     table_items: &[TableEntry],
     cfg: &CursesConfigs,
     f: &mut Frame<Backend>,
     table_decrypted: &bool,
+    show_banner: Option<bool>,
 ) {
     let highlight_colour = if *table_decrypted {
         Color::Green
@@ -47,34 +49,36 @@ pub fn draw_table(
         Color::Red
     };
 
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .margin(2)
-        .constraints(
-            [
-                Constraint::Length(1),
-                Constraint::Length(12),
-                Constraint::Min(1),
-            ]
-            .as_ref(),
-        )
-        .split(Rect {
-            x: (f.size().width / 2) - BOX_WIDTH / 2,
-            y: (f.size().height / 2) - BOX_HEIGHT - 3,
-            width: BANNER_LEN,
-            height: BANNER_HEIGHT,
-        });
+    if let Some(_) = show_banner {
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(2)
+            .constraints(
+                [
+                    Constraint::Length(1),
+                    Constraint::Length(10),
+                    Constraint::Min(1),
+                ]
+                .as_ref(),
+            )
+            .split(Rect {
+                x: (f.size().width / 2) - BOX_WIDTH / 2,
+                y: (f.size().height / 2) - BOX_HEIGHT + 2,
+                width: BANNER_LEN,
+                height: BANNER_HEIGHT,
+            });
 
-    let banner = Spans::from(vec![Span::raw(BANNER)]);
-    let banner_box = Paragraph::new(banner)
-        .block(Block::default().borders(Borders::NONE))
-        .style(
-            Style::default()
-                .fg(highlight_colour)
-                .add_modifier(Modifier::BOLD),
-        )
-        .wrap(Wrap { trim: false });
-    f.render_widget(banner_box, chunks[1]);
+        let banner = Spans::from(vec![Span::raw(BANNER)]);
+        let banner_box = Paragraph::new(banner)
+            .block(Block::default().borders(Borders::NONE))
+            .style(
+                Style::default()
+                    .fg(highlight_colour)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .wrap(Wrap { trim: false });
+        f.render_widget(banner_box, chunks[1]);
+    }
 
     let rects = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
@@ -144,7 +148,7 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
         .constraints([Constraint::Percentage(100)].as_ref())
         .split(Rect {
             x: (f.size().width / 2) - BOX_WIDTH / 2,
-            y: ((f.size().height / 2) - BOX_HEIGHT / 2) + BOX_HEIGHT,
+            y: ((f.size().height / 2) - BOX_HEIGHT / 2),
             width: BOX_WIDTH,
             height: HELP_BOX_HEIGHT,
         });
@@ -185,11 +189,11 @@ pub fn draw_add_delete_password(
         CurrentMode::PasswordDeleted => PASSWORD_DELETED,
         CurrentMode::PasswordCreated => PASSWORD_CREATED,
         CurrentMode::NoSuchPassword => NO_SUCH_PASSWORD,
-        _ => "Unknown mode",
+        _ => "UNKNOWN MODE",
     };
     let text = Text::styled(
         table_input,
-        Style::default().fg(Color::Black).bg(Color::White),
+        Style::default().fg(Color::White).bg(Color::Black),
     );
     let input = Paragraph::new(text)
         .style(
@@ -201,8 +205,9 @@ pub fn draw_add_delete_password(
         .block(
             Block::default()
                 .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::White))
                 .title(title)
-                .style(Style::default()),
+                .style(Style::default().bg(Color::Black)),
         );
     f.render_widget(input, chunks[1]);
 }

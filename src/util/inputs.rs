@@ -45,6 +45,22 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
     }
 }
 
+pub fn with_help_input_handler(table: &mut StatefulPasswordTable, key: Key) {
+    match key {
+        Key::Char('?') => {
+            table.current_mode = match table.current_mode {
+                CurrentMode::Normal => CurrentMode::WithHelp,
+                CurrentMode::WithHelp => CurrentMode::Normal,
+                _ => table.current_mode,
+            };
+        }
+        Key::Char('q') => {
+            table.active = false;
+        }
+        _ => {}
+    }
+}
+
 pub fn add_password_input_handler(
     table: &mut StatefulPasswordTable,
     key: Key,
