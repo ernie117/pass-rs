@@ -17,10 +17,16 @@ use base64::{decode, encode};
 
 use super::json_utils::PasswordEntry;
 
-static BUTTONS: [&str; 9] = ["j/down", "k/up", "y", "d", "r", "c", "D", "?", "q"];
-static EFFECTS: [&str; 9] = [
+static BUTTONS: [&str; 13] = [
+    "j/down", "k/up", "Ctrl-d", "Ctrl-u", "g", "G", "y", "d", "r", "c", "D", "?", "q",
+];
+static EFFECTS: [&str; 13] = [
     "move down",
     "move up",
+    "move down x5",
+    "move up x5",
+    "jump to top",
+    "jump to bottom",
     "copy password",
     "decrypt the password",
     "refresh passwords",

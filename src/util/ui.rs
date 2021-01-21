@@ -25,7 +25,7 @@ static BOX_WIDTH: u16 = 70;
 static BOX_HEIGHT: u16 = 20;
 
 static HELP_PROMPT_HEIGHT: u16 = 3;
-static HELP_BOX_HEIGHT: u16 = 10;
+static HELP_BOX_HEIGHT: u16 = 14;
 
 // static ADD_DEL_PASSWORD_BOX_WIDTH: u16 = BOX_WIDTH;
 // static ADD_DEL_PASSWORD_BOX_HEIGHT: u16 = 8;
