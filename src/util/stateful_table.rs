@@ -86,29 +86,28 @@ impl StatefulPasswordTable {
     }
 
     pub fn move_by_5(&mut self, direction: JumpDirection) {
-        let idx = match self.state.selected() {
-            Some(i) => i,
-            None => 0,
-        };
-
-        let new_idx = match direction {
-            JumpDirection::DOWN => {
-                if idx > (self.items.len() - 5) {
-                    self.items.len() - 1
-                } else {
-                    idx + 5
+        self.state.select(Some(match self.state.selected() {
+            Some(i) => match direction {
+                JumpDirection::DOWN => {
+                    if i >= (self.items.len() - 5) {
+                        self.items.len() - 1
+                    } else {
+                        i + 5
+                    }
                 }
-            }
-            JumpDirection::UP => {
-                if idx < 5 {
-                    0
-                } else {
-                    idx - 5
+                JumpDirection::UP => {
+                    if i < 5 {
+                        0
+                    } else {
+                        i - 5
+                    }
                 }
-            }
-        };
-
-        self.state.select(Some(new_idx));
+            },
+            None => match direction {
+                JumpDirection::DOWN => 5,
+                JumpDirection::UP => self.items.len() - 5,
+            },
+        }));
     }
 
     pub fn decrypt(&mut self) {
