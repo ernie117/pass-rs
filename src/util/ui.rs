@@ -29,8 +29,8 @@ static BOX_HEIGHT: u16 = 20;
 static HELP_PROMPT_HEIGHT: u16 = 3;
 static HELP_BOX_HEIGHT: u16 = 10;
 
-static ADD_DEL_PASSWORD_BOX_WIDTH: u16 = BOX_WIDTH;
-static ADD_DEL_PASSWORD_BOX_HEIGHT: u16 = 8;
+// static ADD_DEL_PASSWORD_BOX_WIDTH: u16 = BOX_WIDTH;
+// static ADD_DEL_PASSWORD_BOX_HEIGHT: u16 = 8;
 
 static BANNER_LEN: u16 = 70;
 static BANNER_HEIGHT: u16 = 10;
@@ -89,18 +89,10 @@ pub fn draw_table(
             x: 0,
             y: 0,
             width: f.size().width,
-            height: f.size().height - 3,
+            height: f.size().height - 2,
         });
 
-    let vec_entries: Vec<Vec<_>> = table_items
-        .iter()
-        .map(|e| vec![&e.service, &e.password, &e.nonce])
-        .collect();
-
-    let rows = vec_entries.iter().map(|i| {
-        let cells = i.iter().map(|i| Cell::from(Span::raw(*i)));
-        Row::new(cells)
-    });
+    let rows: Vec<_> = table_items.iter().map(|i| i.to_cell()).collect();
 
     let header_cells = ["Username", "Password"]
         .iter()
@@ -129,15 +121,21 @@ pub fn draw_table(
 
     let rects_2 = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
+        .margin(1)
         .split(Rect {
             x: 0,
-            y: f.size().height - 3,
+            y: f.size().height - 4,
             width: f.size().width,
-            height: HELP_PROMPT_HEIGHT,
+            height: 5,
         });
 
-    let text = vec![Span::raw("? for help")];
-    let block = Block::default().borders(Borders::ALL);
+    let text = vec![Span::styled(
+        "? for help",
+        Style::default().add_modifier(Modifier::BOLD),
+    )];
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded);
     let paragraph = Paragraph::new(Spans::from(text))
         .block(block)
         .alignment(Alignment::Right);

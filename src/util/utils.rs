@@ -4,8 +4,8 @@ use std::ffi::OsString;
 use std::io::Write;
 use std::process::{Command, Stdio};
 use tui::style::{Modifier, Style};
-use tui::text::Text;
-use tui::widgets::ListItem;
+use tui::text::{Span, Text};
+use tui::widgets::{Cell, ListItem, Row};
 
 use aes_gcm::aead::{generic_array::GenericArray, Aead};
 use aes_gcm::Aes128Gcm; // Or `Aes256Gcm`
@@ -46,6 +46,15 @@ impl TableEntry {
             password,
             nonce,
         }
+    }
+
+    pub fn to_cell(&self) -> Row {
+        let cells: Vec<_> = [&self.service, &self.password, &self.nonce]
+            .iter()
+            .map(|e| Cell::from(Span::raw(*e)))
+            .collect();
+
+        Row::new(cells)
     }
 }
 
@@ -117,13 +126,14 @@ pub fn encrypt_known(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
 #[inline]
 pub fn decrypt(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
     let decoded_password = decode(password.as_bytes()).unwrap();
-    let decrypted = aead
-        .decrypt(
-            GenericArray::from_slice(nonce.as_bytes()),
-            decoded_password.as_ref(),
-        )
-        .expect("decryption failure!");
-    String::from_utf8(decrypted).unwrap()
+    if let Ok(decrypted) = aead.decrypt(
+        GenericArray::from_slice(nonce.as_bytes()),
+        decoded_password.as_ref(),
+    ) {
+        String::from_utf8(decrypted).unwrap()
+    } else {
+        String::from("Wrong login key for this password!")
+    }
 }
 
 #[inline]
