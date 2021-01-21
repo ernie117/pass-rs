@@ -10,9 +10,7 @@ use tui::backend::TermionBackend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans, Text};
-use tui::widgets::{
-    Block, Borders, Cell, Clear, List, Paragraph, Row, Table, TableState, Wrap,
-};
+use tui::widgets::{Block, Borders, Cell, Clear, List, Paragraph, Row, Table, TableState, Wrap};
 use tui::Frame;
 
 pub type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>;

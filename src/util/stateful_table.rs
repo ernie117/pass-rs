@@ -1,4 +1,4 @@
-use crate::util::inputs::JumpDirection;
+use crate::util::inputs::{JumpDirection, LeapDirection};
 use crate::util::json_utils::read_passwords;
 use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known, TableEntry};
 use aes_gcm::Aes128Gcm;
@@ -110,12 +110,11 @@ impl StatefulPasswordTable {
         }));
     }
 
-    pub fn jump_to_bottom(&mut self) {
-        self.state.select(Some(self.items.len() - 1));
-    }
-
-    pub fn jump_to_top(&mut self) {
-        self.state.select(Some(0));
+    pub fn leap(&mut self, direction: LeapDirection) {
+        self.state.select(Some(match direction {
+            LeapDirection::BOTTOM => self.items.len() - 1,
+            LeapDirection::TOP => 0,
+        }));
     }
 
     pub fn decrypt(&mut self) {

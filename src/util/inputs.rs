@@ -11,6 +11,11 @@ pub enum JumpDirection {
     UP,
 }
 
+pub enum LeapDirection {
+    BOTTOM,
+    TOP,
+}
+
 pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key) {
     match key {
         Key::Char('c') => {
@@ -28,18 +33,6 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
         Key::Char('y') => {
             table.copy();
         }
-        Key::Char('?') => {
-            table.current_mode = match table.current_mode {
-                CurrentMode::Normal => CurrentMode::WithHelp,
-                CurrentMode::WithHelp => CurrentMode::Normal,
-                _ => table.current_mode,
-            };
-        }
-        Key::Char('r') => {
-            if let Err(e) = table.re_encrypt() {
-                panic!("Error reading files: {}", e);
-            }
-        }
         Key::Char('D') => {
             table.current_mode = CurrentMode::DeletePassword;
         }
@@ -53,10 +46,22 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
             table.move_by_5(JumpDirection::UP);
         }
         Key::Char('G') => {
-            table.jump_to_bottom();
+            table.leap(LeapDirection::BOTTOM);
         }
         Key::Char('g') => {
-            table.jump_to_top();
+            table.leap(LeapDirection::TOP);
+        }
+        Key::Char('?') => {
+            table.current_mode = match table.current_mode {
+                CurrentMode::Normal => CurrentMode::WithHelp,
+                CurrentMode::WithHelp => CurrentMode::Normal,
+                _ => table.current_mode,
+            };
+        }
+        Key::Char('r') => {
+            if let Err(e) = table.re_encrypt() {
+                panic!("Error reading files: {}", e);
+            }
         }
         _ => {}
     }
