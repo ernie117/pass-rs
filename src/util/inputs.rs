@@ -12,8 +12,14 @@ pub enum JumpDirection {
 }
 
 pub enum LeapDirection {
-    BOTTOM,
     TOP,
+    MIDDLE,
+    BOTTOM,
+}
+
+pub enum MoveDirection {
+    DOWN,
+    UP,
 }
 
 pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key) {
@@ -22,10 +28,10 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
             table.current_mode = CurrentMode::NewUserName;
         }
         Key::Char('j') | Key::Down => {
-            table.next();
+            table.select(MoveDirection::DOWN);
         }
         Key::Char('k') | Key::Up => {
-            table.previous();
+            table.select(MoveDirection::UP);
         }
         Key::Char('d') => {
             table.decrypt();
@@ -45,11 +51,14 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
         Key::Ctrl('u') => {
             table.move_by_5(JumpDirection::UP);
         }
-        Key::Char('G') => {
-            table.leap(LeapDirection::BOTTOM);
-        }
         Key::Char('g') => {
             table.leap(LeapDirection::TOP);
+        }
+        Key::Char('M') => {
+            table.leap(LeapDirection::MIDDLE);
+        }
+        Key::Char('G') => {
+            table.leap(LeapDirection::BOTTOM);
         }
         Key::Char('?') => {
             table.current_mode = match table.current_mode {

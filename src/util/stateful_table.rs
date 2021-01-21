@@ -1,4 +1,4 @@
-use crate::util::inputs::{JumpDirection, LeapDirection};
+use crate::util::inputs::{JumpDirection, LeapDirection, MoveDirection};
 use crate::util::json_utils::read_passwords;
 use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known, TableEntry};
 use aes_gcm::Aes128Gcm;
@@ -43,46 +43,36 @@ impl StatefulPasswordTable {
             state: TableState::default(),
         }
     }
-    pub fn next(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if self.decrypted {
-                    self.items[i].password =
-                        encrypt_known(&self.items[i].password, &self.key, &self.items[i].nonce);
-                }
-                if i >= self.items.len() - 1 {
-                    0
-                } else {
-                    i + 1
-                }
-            }
-            None => 0,
-        };
-        if self.decrypted {
-            self.decrypted = false;
-        };
-        self.state.select(Some(i));
-    }
 
-    pub fn previous(&mut self) {
-        let i = match self.state.selected() {
+    pub fn select(&mut self, direction: MoveDirection) {
+        if self.decrypted {
+            self.decrypted = false;
+        };
+        self.state.select(Some(match self.state.selected() {
             Some(i) => {
                 if self.decrypted {
                     self.items[i].password =
                         encrypt_known(&self.items[i].password, &self.key, &self.items[i].nonce);
                 }
-                if i == 0 {
-                    self.items.len() - 1
-                } else {
-                    i - 1
+                match direction {
+                    MoveDirection::DOWN => {
+                        if i >= self.items.len() - 1 {
+                            0
+                        } else {
+                            i + 1
+                        }
+                    }
+                    MoveDirection::UP => {
+                        if i == 0 {
+                            self.items.len() - 1
+                        } else {
+                            i - 1
+                        }
+                    }
                 }
             }
             None => 0,
-        };
-        if self.decrypted {
-            self.decrypted = false;
-        };
-        self.state.select(Some(i));
+        }));
     }
 
     pub fn move_by_5(&mut self, direction: JumpDirection) {
@@ -112,8 +102,9 @@ impl StatefulPasswordTable {
 
     pub fn leap(&mut self, direction: LeapDirection) {
         self.state.select(Some(match direction {
-            LeapDirection::BOTTOM => self.items.len() - 1,
             LeapDirection::TOP => 0,
+            LeapDirection::MIDDLE => self.items.len() / 2,
+            LeapDirection::BOTTOM => self.items.len() - 1,
         }));
     }
 
