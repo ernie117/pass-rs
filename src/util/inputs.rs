@@ -7,7 +7,8 @@ use super::json_utils::write_new_password;
 use std::{error::Error, io};
 
 pub enum JumpDirection {
-    DOWN, UP,
+    DOWN,
+    UP,
 }
 
 pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key) {
