@@ -1,4 +1,5 @@
 use crate::util::json_utils::read_passwords;
+use crate::util::inputs::JumpDirection;
 use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known, TableEntry};
 use aes_gcm::Aes128Gcm;
 use std::error::Error;
@@ -82,6 +83,34 @@ impl StatefulPasswordTable {
             self.decrypted = false;
         };
         self.state.select(Some(i));
+    }
+
+    pub fn move_by_5(&mut self, direction: JumpDirection) {
+        let idx = match self.state.selected() {
+            Some(i) => {
+                i
+            }
+            None => 0,
+        };
+
+        let new_idx = match direction {
+            JumpDirection::DOWN => {
+                if idx > (self.items.len() - 5) {
+                    self.items.len() - 1
+                } else {
+                    idx + 5
+                }
+            }
+            JumpDirection::UP => {
+                if idx < 5 {
+                    0
+                } else {
+                    idx - 5
+                }
+            }
+        };
+
+        self.state.select(Some(new_idx));
     }
 
     pub fn decrypt(&mut self) {

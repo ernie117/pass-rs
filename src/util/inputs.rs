@@ -6,6 +6,10 @@ use termion::event::Key;
 use super::json_utils::write_new_password;
 use std::{error::Error, io};
 
+pub enum JumpDirection {
+    DOWN, UP,
+}
+
 pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key) {
     match key {
         Key::Char('c') => {
@@ -40,6 +44,12 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
         }
         Key::Char('q') => {
             table.active = false;
+        }
+        Key::Ctrl('d') => {
+            table.move_by_5(JumpDirection::DOWN);
+        }
+        Key::Ctrl('u') => {
+            table.move_by_5(JumpDirection::UP);
         }
         _ => {}
     }

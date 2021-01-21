@@ -26,7 +26,7 @@ static NO_SUCH_PASSWORD: &str = "No such password! Press Esc to close";
 static BOX_WIDTH: u16 = 70;
 static BOX_HEIGHT: u16 = 20;
 
-static HELP_PROMPT_HEIGHT: u16 = 3;
+static HELP_PROMPT_HEIGHT: u16 = 5;
 static HELP_BOX_HEIGHT: u16 = 10;
 
 // static ADD_DEL_PASSWORD_BOX_WIDTH: u16 = BOX_WIDTH;
@@ -126,7 +126,7 @@ pub fn draw_table(
             x: 0,
             y: f.size().height - 4,
             width: f.size().width,
-            height: 5,
+            height: HELP_PROMPT_HEIGHT,
         });
 
     let text = vec![Span::styled(
