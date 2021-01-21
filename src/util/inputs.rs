@@ -52,6 +52,12 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
         Key::Ctrl('u') => {
             table.move_by_5(JumpDirection::UP);
         }
+        Key::Char('G') => {
+            table.jump_to_bottom();
+        }
+        Key::Char('g') => {
+            table.jump_to_top();
+        }
         _ => {}
     }
 }

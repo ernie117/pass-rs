@@ -11,7 +11,7 @@ use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans, Text};
 use tui::widgets::{
-    Block, BorderType, Borders, Cell, Clear, List, Paragraph, Row, Table, TableState, Wrap,
+    Block, Borders, Cell, Clear, List, Paragraph, Row, Table, TableState, Wrap,
 };
 use tui::Frame;
 
@@ -26,7 +26,7 @@ static NO_SUCH_PASSWORD: &str = "No such password! Press Esc to close";
 static BOX_WIDTH: u16 = 70;
 static BOX_HEIGHT: u16 = 20;
 
-static HELP_PROMPT_HEIGHT: u16 = 5;
+static HELP_PROMPT_HEIGHT: u16 = 3;
 static HELP_BOX_HEIGHT: u16 = 10;
 
 // static ADD_DEL_PASSWORD_BOX_WIDTH: u16 = BOX_WIDTH;
@@ -84,12 +84,12 @@ pub fn draw_table(
 
     let rects = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
-        .margin(1)
+        .horizontal_margin(1)
         .split(Rect {
             x: 0,
             y: 0,
             width: f.size().width,
-            height: f.size().height - 2,
+            height: f.size().height - 3,
         });
 
     let rows: Vec<_> = table_items.iter().map(|i| i.to_cell()).collect();
@@ -109,11 +109,10 @@ pub fn draw_table(
                     Style::default().add_modifier(cfg.title_style),
                 ))
                 .borders(Borders::ALL)
-                .border_type(cfg.border_type)
                 .border_style(Style::default().add_modifier(cfg.border_style)),
         )
         .highlight_style(Style::default().fg(Color::Black).bg(highlight_colour))
-        .widths(&[Constraint::Length(35), Constraint::Percentage(100)])
+        .widths(&[Constraint::Percentage(50), Constraint::Percentage(50)])
         .style(Style::default().fg(Color::White))
         .column_spacing(1);
 
@@ -121,10 +120,10 @@ pub fn draw_table(
 
     let rects_2 = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
-        .margin(1)
+        .horizontal_margin(1)
         .split(Rect {
             x: 0,
-            y: f.size().height - 4,
+            y: f.size().height - 3,
             width: f.size().width,
             height: HELP_PROMPT_HEIGHT,
         });
@@ -133,12 +132,10 @@ pub fn draw_table(
         "? for help",
         Style::default().add_modifier(Modifier::BOLD),
     )];
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .border_type(BorderType::Rounded);
+    let block = Block::default().borders(Borders::ALL);
     let paragraph = Paragraph::new(Spans::from(text))
         .block(block)
-        .alignment(Alignment::Right);
+        .alignment(Alignment::Center);
 
     f.render_widget(paragraph, rects_2[0]);
 }
@@ -204,7 +201,6 @@ pub fn draw_add_delete_password(
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().add_modifier(Modifier::BOLD))
-                .border_type(BorderType::Rounded)
                 .title(title)
                 .style(Style::default()),
         );

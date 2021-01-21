@@ -110,6 +110,14 @@ impl StatefulPasswordTable {
         }));
     }
 
+    pub fn jump_to_bottom(&mut self) {
+        self.state.select(Some(self.items.len() - 1));
+    }
+
+    pub fn jump_to_top(&mut self) {
+        self.state.select(Some(0));
+    }
+
     pub fn decrypt(&mut self) {
         if self.items.is_empty() {
             // So we don't subscript an array that's empty.
