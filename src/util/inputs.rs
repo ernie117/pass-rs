@@ -3,7 +3,6 @@ use crate::util::stateful_table::{CurrentMode, StatefulPasswordTable};
 use std::io::Write;
 use termion::event::Key;
 
-use super::json_utils::write_new_password;
 use std::{error::Error, io};
 
 pub enum LeapDirection {
@@ -92,12 +91,7 @@ pub fn add_password_input_handler(
             }
             // TODO Need to check whether a password currently exists for the given service.
             Key::Char('\n') => {
-                if table.input.is_empty() {
-                    // do nothing
-                }
-                table.new_username.push_str(&table.input);
-                table.input.clear();
-                table.current_mode = CurrentMode::NewPassword;
+                table.new_username();
             }
             Key::Char(c) => {
                 table.input.push(c);
@@ -115,19 +109,7 @@ pub fn add_password_input_handler(
                 table.new_password.clear();
             }
             Key::Char('\n') => {
-                if table.input.is_empty() {
-                    // do nothing
-                }
-                table.new_password.push_str(&table.input);
-                table.input.clear();
-                table.current_mode = CurrentMode::PasswordCreated;
-
-                if !table.new_username.is_empty() && !table.new_password.is_empty() {
-                    write_new_password(&table.new_username, &table.new_password, &table.key)?;
-                    table.new_username.clear();
-                    table.new_password.clear();
-                    table.re_encrypt();
-                }
+                table.new_password();
             }
             Key::Char(c) => {
                 table.input.push(c);
@@ -178,12 +160,7 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
             }
             _ => {}
         },
-        CurrentMode::PasswordDeleted => {
-            if let Key::Esc = key {
-                table.current_mode = CurrentMode::Normal;
-            }
-        }
-        CurrentMode::NoSuchPassword => {
+        CurrentMode::PasswordDeleted | CurrentMode::NoSuchPassword => {
             if let Key::Esc = key {
                 table.current_mode = CurrentMode::Normal;
             }

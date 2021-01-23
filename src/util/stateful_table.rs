@@ -1,5 +1,5 @@
 use crate::util::inputs::{LeapDirection, MoveDirection};
-use crate::util::json_utils::read_passwords;
+use crate::util::json_utils::{read_passwords, write_new_password};
 use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known, TableEntry};
 use aes_gcm::Aes128Gcm;
 use tui::widgets::TableState;
@@ -115,17 +115,6 @@ impl StatefulPasswordTable {
         };
     }
 
-    fn encryption(&self, mode: EncryptionMode, idx: usize) -> String {
-        match mode {
-            EncryptionMode::ENCRYPT => {
-                encrypt_known(&self.items[idx].password, &self.key, &self.items[idx].nonce)
-            }
-            EncryptionMode::DECRYPT => {
-                decrypt(&self.items[idx].password, &self.key, &self.items[idx].nonce)
-            }
-        }
-    }
-
     pub fn copy(&mut self) {
         if let Some(i) = self.state.selected() {
             if self.decrypted {
@@ -142,12 +131,52 @@ impl StatefulPasswordTable {
         }
     }
 
+    pub fn new_username(&mut self) {
+        if self.input.is_empty() {
+            // do nothing
+        } else {
+            self.new_username.push_str(&self.input);
+            self.input.clear();
+            self.current_mode = CurrentMode::NewPassword;
+        }
+    }
+
+    pub fn new_password(&mut self) {
+        if self.input.is_empty() {
+            // do nothing
+        } else {
+            self.new_password.push_str(&self.input);
+            self.input.clear();
+            self.current_mode = CurrentMode::PasswordCreated;
+
+            if !self.new_username.is_empty()
+                && !self.new_password.is_empty()
+                && write_new_password(&self.new_username, &self.new_password, &self.key).is_ok()
+            {
+                self.new_username.clear();
+                self.new_password.clear();
+                self.re_encrypt();
+            }
+        }
+    }
+
     pub fn re_encrypt(&mut self) {
         if let Ok(items) = read_passwords() {
             if self.decrypted {
                 self.decrypted = !self.decrypted;
             }
             self.items = build_table_rows(items);
+        }
+    }
+
+    fn encryption(&self, mode: EncryptionMode, idx: usize) -> String {
+        match mode {
+            EncryptionMode::ENCRYPT => {
+                encrypt_known(&self.items[idx].password, &self.key, &self.items[idx].nonce)
+            }
+            EncryptionMode::DECRYPT => {
+                decrypt(&self.items[idx].password, &self.key, &self.items[idx].nonce)
+            }
         }
     }
 
