@@ -55,7 +55,7 @@ impl TableEntry {
         }
     }
 
-    pub fn to_cell(&self) -> Row {
+    pub fn to_cells(&self) -> Row {
         let cells: Vec<_> = [&self.service, &self.password, &self.nonce]
             .iter()
             .map(|e| Cell::from(Span::raw(*e)))

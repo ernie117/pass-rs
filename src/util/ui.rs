@@ -89,7 +89,7 @@ pub fn draw_table(
             height: f.size().height - 3,
         });
 
-    let rows: Vec<_> = table_items.iter().map(|i| i.to_cell()).collect();
+    let rows: Vec<_> = table_items.iter().map(|i| i.to_cells()).collect();
 
     let header_cells = ["Username", "Password"]
         .iter()

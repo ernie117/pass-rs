@@ -103,13 +103,15 @@ impl StatefulPasswordTable {
             return;
         }
         if let Some(i) = self.state.selected() {
+            let mode: EncryptionMode;
             if self.decrypted {
                 self.decrypted = false;
-                self.items[i].password = self.encryption(EncryptionMode::ENCRYPT, i);
+                mode = EncryptionMode::ENCRYPT;
             } else {
                 self.decrypted = true;
-                self.items[i].password = self.encryption(EncryptionMode::DECRYPT, i);
+                mode = EncryptionMode::DECRYPT;
             }
+            self.items[i].password = self.encryption(mode, i);
         };
     }
 
@@ -132,7 +134,9 @@ impl StatefulPasswordTable {
                 }
                 self.decrypted = false;
                 self.items[i].password = self.encryption(EncryptionMode::ENCRYPT, i);
-            } else if let Err(error) = copy_to_clipboard(&self.encryption(EncryptionMode::DECRYPT, i)) {
+            } else if let Err(error) =
+                copy_to_clipboard(&self.encryption(EncryptionMode::DECRYPT, i))
+            {
                 panic!("Error copying to clipboard: {}", error);
             }
         }
