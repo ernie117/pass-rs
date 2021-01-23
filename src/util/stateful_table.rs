@@ -1,4 +1,4 @@
-use crate::util::inputs::{JumpDirection, LeapDirection, MoveDirection};
+use crate::util::inputs::{LeapDirection, MoveDirection};
 use crate::util::json_utils::read_passwords;
 use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known, TableEntry};
 use aes_gcm::Aes128Gcm;
@@ -15,6 +15,11 @@ pub enum CurrentMode {
     DeletePassword,
     PasswordDeleted,
     NoSuchPassword,
+}
+
+enum EncryptionMode {
+    ENCRYPT,
+    DECRYPT,
 }
 
 pub struct StatefulPasswordTable {
@@ -45,14 +50,11 @@ impl StatefulPasswordTable {
     }
 
     pub fn select(&mut self, direction: MoveDirection) {
-        if self.decrypted {
-            self.decrypted = false;
-        };
         self.state.select(Some(match self.state.selected() {
             Some(i) => {
                 if self.decrypted {
-                    self.items[i].password =
-                        encrypt_known(&self.items[i].password, &self.key, &self.items[i].nonce);
+                    self.decrypted = false;
+                    self.items[i].password = self.encryption(EncryptionMode::ENCRYPT, i);
                 }
                 match direction {
                     MoveDirection::DOWN => (i + 1) % self.items.len(),
@@ -63,17 +65,17 @@ impl StatefulPasswordTable {
         }));
     }
 
-    pub fn move_by_5(&mut self, direction: JumpDirection) {
+    pub fn move_by_5(&mut self, direction: MoveDirection) {
         self.state.select(Some(match self.state.selected() {
             Some(i) => match direction {
-                JumpDirection::DOWN => {
+                MoveDirection::DOWN => {
                     if i >= (self.items.len() - 5) {
                         self.items.len() - 1
                     } else {
                         i + 5
                     }
                 }
-                JumpDirection::UP => {
+                MoveDirection::UP => {
                     if i < 5 {
                         0
                     } else {
@@ -82,8 +84,8 @@ impl StatefulPasswordTable {
                 }
             },
             None => match direction {
-                JumpDirection::DOWN => 5,
-                JumpDirection::UP => self.items.len() - 5,
+                MoveDirection::DOWN => 5,
+                MoveDirection::UP => self.items.len() - 5,
             },
         }));
     }
@@ -104,14 +106,23 @@ impl StatefulPasswordTable {
         if let Some(i) = self.state.selected() {
             if self.decrypted {
                 self.decrypted = false;
-                self.items[i].password =
-                    encrypt_known(&self.items[i].password, &self.key, &self.items[i].nonce);
+                self.items[i].password = self.encryption(EncryptionMode::ENCRYPT, i);
             } else {
                 self.decrypted = true;
-                self.items[i].password =
-                    decrypt(&self.items[i].password, &self.key, &self.items[i].nonce);
+                self.items[i].password = self.encryption(EncryptionMode::DECRYPT, i);
             }
         };
+    }
+
+    fn encryption(&self, mode: EncryptionMode, idx: usize) -> String {
+        match mode {
+            EncryptionMode::ENCRYPT => {
+                encrypt_known(&self.items[idx].password, &self.key, &self.items[idx].nonce)
+            }
+            EncryptionMode::DECRYPT => {
+                decrypt(&self.items[idx].password, &self.key, &self.items[idx].nonce)
+            }
+        }
     }
 
     pub fn copy(&mut self) {
@@ -121,13 +132,8 @@ impl StatefulPasswordTable {
                     panic!("Error copying to clipboard: {}", error);
                 }
                 self.decrypted = false;
-                self.items[i].password =
-                    encrypt_known(&self.items[i].password, &self.key, &self.items[i].nonce);
-            } else if let Err(error) = copy_to_clipboard(&decrypt(
-                &self.items[i].password,
-                &self.key,
-                &self.items[i].nonce,
-            )) {
+                self.items[i].password = self.encryption(EncryptionMode::ENCRYPT, i);
+            } else if let Err(error) = copy_to_clipboard(&self.encryption(EncryptionMode::DECRYPT, i)) {
                 panic!("Error copying to clipboard: {}", error);
             }
         }
@@ -142,6 +148,12 @@ impl StatefulPasswordTable {
         Ok(())
     }
 
+    /// Decrements the highlighted index by 1 and wraps around to the last element
+    /// if the current index is 0.
+    ///
+    /// Follows this formula:
+    ///
+    /// ((index - 1) + k) % k
     fn backwards_wraparound(&self, idx: usize) -> usize {
         (((idx as isize - 1) + self.items.len() as isize) % self.items.len() as isize) as usize
     }
