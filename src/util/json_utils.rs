@@ -4,7 +4,7 @@ use aes_gcm::Aes128Gcm;
 use argon2::Config;
 use base64::encode;
 use dirs::home_dir;
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
@@ -156,7 +156,11 @@ pub fn check_files(key: String) -> Result<(), Box<dyn Error>> {
 }
 
 #[inline]
-fn populate_new_file(file_type: FileType, path: String, key: Option<String>) -> Result<(), Box<dyn Error>> {
+fn populate_new_file(
+    file_type: FileType,
+    path: String,
+    key: Option<String>,
+) -> Result<(), Box<dyn Error>> {
     let mut new_file = OpenOptions::new()
         .read(true)
         .write(true)
@@ -164,14 +168,10 @@ fn populate_new_file(file_type: FileType, path: String, key: Option<String>) -> 
         .open(&path)?;
 
     let template = match file_type {
-        FileType::Password => {
-            json!({}).to_string()
-        }
-        FileType::Config => {
-            serde_json::to_string_pretty(&RawConfigs::default()).unwrap()
-        }
+        FileType::Password => json!({}).to_string(),
+        FileType::Config => serde_json::to_string_pretty(&RawConfigs::default()).unwrap(),
         FileType::Passrc => {
-            new_passrc(key.unwrap().as_bytes())
+            serde_json::to_string_pretty(&new_passrc(key.unwrap().as_bytes())).unwrap()
         }
     };
 
@@ -179,7 +179,7 @@ fn populate_new_file(file_type: FileType, path: String, key: Option<String>) -> 
 }
 
 #[inline]
-fn new_passrc(key: &[u8]) -> String {
+fn new_passrc(key: &[u8]) -> serde_json::Value {
     let mut salt = [0_u8; 16];
     thread_rng().try_fill(&mut salt[..]).unwrap();
 
@@ -188,7 +188,7 @@ fn new_passrc(key: &[u8]) -> String {
     json!({
         "key": encoded,
         "salt": salt,
-    }).to_string()
+    })
 }
 
 #[inline]
