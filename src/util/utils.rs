@@ -55,12 +55,12 @@ impl TableEntry {
     }
 
     pub fn to_cells(&self) -> Row {
-        let cells: Vec<_> = [&self.service, &self.password, &self.nonce]
-            .iter()
-            .map(|e| Cell::from(Span::raw(*e)))
-            .collect();
-
-        Row::new(cells)
+        Row::new(
+            [&self.service, &self.password, &self.nonce]
+                .iter()
+                .map(|e| Cell::from(Span::raw(*e)))
+                .collect::<Vec<Cell>>(),
+        )
     }
 }
 
@@ -115,14 +115,13 @@ pub fn encrypt(password: &str, aead: &Aes128Gcm) -> (Vec<u8>, String) {
 
 #[inline]
 pub fn encrypt_known(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
-    let cipher_text = aead
-        .encrypt(
+    encode(
+        aead.encrypt(
             GenericArray::from_slice(nonce.as_bytes()),
             password.as_bytes(),
         )
-        .unwrap();
-
-    encode(cipher_text)
+        .unwrap(),
+    )
 }
 
 #[inline]
@@ -158,23 +157,21 @@ pub fn verify_dev() -> bool {
 
 #[inline]
 pub fn build_help_messages() -> Vec<ListItem<'static>> {
-    let zipped_help = BUTTONS.iter().zip(EFFECTS.iter());
-
-    let mut messages = Vec::new();
-    for (button, effect) in zipped_help {
-        let spacing = (HELP_MSG_SPACING - effect.len()) - button.len();
-        let main_str = format!(
-            "{} {:.<spacing$} {}",
-            button,
-            ".",
-            effect,
-            spacing = spacing as usize
-        );
-        messages.push(ListItem::new(Text::styled(
-            format!("{:^69}", main_str),
-            Style::default().add_modifier(Modifier::ITALIC),
-        )));
-    }
-
-    messages
+    BUTTONS
+        .iter()
+        .zip(EFFECTS.iter())
+        .map(|(b, e)| {
+            let main_str = format!(
+                "{} {:.<spacing$} {}",
+                b,
+                ".",
+                e,
+                spacing = (HELP_MSG_SPACING - e.len()) - b.len()
+            );
+            ListItem::new(Text::styled(
+                format!("{:^69}", main_str),
+                Style::default().add_modifier(Modifier::ITALIC),
+            ))
+        })
+        .collect::<Vec<ListItem>>()
 }
