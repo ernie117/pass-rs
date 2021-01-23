@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::error::Error;
-use std::ffi::OsString;
 use std::io::Write;
 use std::process::{Command, Stdio};
 use tui::style::{Modifier, Style};
@@ -67,14 +66,10 @@ impl TableEntry {
 
 #[inline]
 pub fn build_table_rows(map: HashMap<String, PasswordEntry>) -> Vec<TableEntry> {
-    let mut vec_of_vecs = Vec::new();
-    for (key, password_entry) in map {
-        vec_of_vecs.push(TableEntry::new(
-            key,
-            password_entry.password,
-            password_entry.nonce,
-        ));
-    }
+    let mut vec_of_vecs = map
+        .into_iter()
+        .map(|(k, v)| TableEntry::new(k, v.password, v.nonce))
+        .collect::<Vec<TableEntry>>();
 
     vec_of_vecs.sort_by(|a, b| a.service.partial_cmp(&b.service).unwrap());
 
@@ -146,29 +141,19 @@ pub fn decrypt(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
 #[inline]
 pub fn verify_dev() -> bool {
     let encrypted_password = match std::env::var_os("PASSCURSES_ENC_DEV_PASSWORD") {
-        Some(value) => value,
-        None => OsString::new(),
+        Some(value) => value.into_string().unwrap(),
+        None => String::new(),
     };
     let raw_password = match std::env::var_os("PASSCURSES_RAW_DEV_PASSWORD") {
-        Some(value) => value,
-        None => OsString::new(),
+        Some(value) => value.into_string().unwrap(),
+        None => String::new(),
     };
 
-    match raw_password.as_os_str().to_str() {
-        Some(_s) => {}
-        None => return false,
+    if !encrypted_password.is_empty() {
+        argon2::verify_encoded(&encrypted_password, raw_password.as_bytes()).unwrap()
+    } else {
+        false
     }
-
-    let tmp = raw_password.into_string().unwrap();
-    let raw_password_bytes = tmp.as_bytes();
-
-    let final_password = encrypted_password.as_os_str().to_str().unwrap();
-
-    if final_password.is_empty() {
-        return false;
-    }
-
-    argon2::verify_encoded(final_password, raw_password_bytes).unwrap()
 }
 
 #[inline]
