@@ -1,8 +1,10 @@
 use crate::util::configs::{CursesConfigs, RawConfigs};
 use crate::util::utils::encrypt;
 use aes_gcm::Aes128Gcm;
+use argon2::Config;
 use base64::encode;
 use dirs::home_dir;
+use rand::{Rng, thread_rng};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
@@ -11,6 +13,12 @@ use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Write};
 use std::path::Path;
+
+enum FileType {
+    Password,
+    Config,
+    Passrc,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PasswordEntry {
@@ -126,41 +134,61 @@ pub fn check_directory_exists() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn check_files() -> Result<(), Box<dyn Error>> {
-    let passwords_path = format!("{}/{}.json", &get_home_dir(), "passwords");
+pub fn check_files(key: String) -> Result<(), Box<dyn Error>> {
+    let home_dir = &get_home_dir();
+    let passwords_path = format!("{}/{}.json", home_dir, "passwords");
     if !Path::new(&passwords_path).exists() {
-        populate_new_file("passwords", passwords_path)?;
+        println!("Creating passwords json file...");
+        populate_new_file(FileType::Password, passwords_path, None)?;
     }
-    let config_path = format!("{}/{}.json", &get_home_dir(), "config");
+    let config_path = format!("{}/{}.json", home_dir, "config");
     if !Path::new(&config_path).exists() {
-        populate_new_file("config", config_path)?;
+        println!("Creating configuration json file...");
+        populate_new_file(FileType::Config, config_path, None)?;
     }
-    // TODO also need to check for/create passrc
+    let passrc_path = format!("{}/{}.json", home_dir, "passrc");
+    if !Path::new(&passrc_path).exists() {
+        println!("Creating passrc json file...");
+        populate_new_file(FileType::Passrc, passrc_path, Some(key))?;
+    }
 
     Ok(())
 }
 
 #[inline]
-fn populate_new_file(file_type: &str, path: String) -> Result<(), Box<dyn Error>> {
+fn populate_new_file(file_type: FileType, path: String, key: Option<String>) -> Result<(), Box<dyn Error>> {
     let mut new_file = OpenOptions::new()
         .read(true)
         .write(true)
         .create(true)
         .open(&path)?;
 
-    let mut new_template = json!({}).to_string();
-    match file_type {
-        "passwords" => {
-            // remains an empty json
+    let template = match file_type {
+        FileType::Password => {
+            json!({}).to_string()
         }
-        "config" => {
-            new_template = serde_json::to_string_pretty(&RawConfigs::default())?;
+        FileType::Config => {
+            serde_json::to_string_pretty(&RawConfigs::default()).unwrap()
         }
-        _ => {}
-    }
-    new_file.write_all(new_template.as_bytes())?;
+        FileType::Passrc => {
+            new_passrc(key.unwrap().as_bytes())
+        }
+    };
 
-    Ok(())
+    Ok(new_file.write_all(template.as_bytes())?)
+}
+
+#[inline]
+fn new_passrc(key: &[u8]) -> String {
+    let mut salt = [0_u8; 16];
+    thread_rng().try_fill(&mut salt[..]).unwrap();
+
+    let encoded = argon2::hash_encoded(&key, &salt, &Config::default()).unwrap();
+
+    json!({
+        "key": encoded,
+        "salt": salt,
+    }).to_string()
 }
 
 #[inline]

@@ -36,7 +36,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let aead = Aes128Gcm::new(&final_key);
 
     util::json_utils::check_directory_exists()?;
-    util::json_utils::check_files()?;
+    util::json_utils::check_files(key)?;
 
     let stdout = io::stdout().into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);
