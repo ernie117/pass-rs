@@ -33,8 +33,7 @@ static HELP_BOX_HEIGHT: u16 = 16;
 static BANNER_LEN: u16 = 70;
 static BANNER_HEIGHT: u16 = 10;
 
-/// Draws the main view including the password table and, optionally,
-/// the banner.
+/// Draws the main view including the password table and, optionally, the banner.
 pub fn draw_table(
     table_state: &mut TableState,
     table_items: &[TableEntry],

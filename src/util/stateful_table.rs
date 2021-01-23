@@ -2,7 +2,6 @@ use crate::util::inputs::{LeapDirection, MoveDirection};
 use crate::util::json_utils::read_passwords;
 use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known, TableEntry};
 use aes_gcm::Aes128Gcm;
-use std::error::Error;
 use tui::widgets::TableState;
 
 #[derive(Copy, Clone)]
@@ -139,13 +138,13 @@ impl StatefulPasswordTable {
         }
     }
 
-    pub fn re_encrypt(&mut self) -> Result<(), Box<dyn Error>> {
-        self.items = build_table_rows(read_passwords()?);
-        if self.decrypted {
-            self.decrypted = !self.decrypted;
+    pub fn re_encrypt(&mut self) {
+        if let Ok(items) = read_passwords() {
+            if self.decrypted {
+                self.decrypted = !self.decrypted;
+            }
+            self.items = build_table_rows(items);
         }
-
-        Ok(())
     }
 
     /// Decrements the highlighted index by 1 and wraps around to the last element

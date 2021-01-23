@@ -56,16 +56,10 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
             table.leap(LeapDirection::BOTTOM);
         }
         Key::Char('?') => {
-            table.current_mode = match table.current_mode {
-                CurrentMode::Normal => CurrentMode::WithHelp,
-                CurrentMode::WithHelp => CurrentMode::Normal,
-                _ => table.current_mode,
-            };
+            table.current_mode = CurrentMode::WithHelp;
         }
         Key::Char('r') => {
-            if let Err(e) = table.re_encrypt() {
-                panic!("Error reading files: {}", e);
-            }
+            table.re_encrypt();
         }
         _ => {}
     }
@@ -74,11 +68,7 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
 pub fn with_help_input_handler(table: &mut StatefulPasswordTable, key: Key) {
     match key {
         Key::Char('?') => {
-            table.current_mode = match table.current_mode {
-                CurrentMode::Normal => CurrentMode::WithHelp,
-                CurrentMode::WithHelp => CurrentMode::Normal,
-                _ => table.current_mode,
-            };
+            table.current_mode = CurrentMode::Normal;
         }
         Key::Char('q') => {
             table.active = false;
@@ -136,7 +126,7 @@ pub fn add_password_input_handler(
                     write_new_password(&table.new_username, &table.new_password, &table.key)?;
                     table.new_username.clear();
                     table.new_password.clear();
-                    table.re_encrypt()?;
+                    table.re_encrypt();
                 }
             }
             Key::Char(c) => {
@@ -173,7 +163,7 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
                     // Password existed.
                     table.current_mode = CurrentMode::PasswordDeleted;
                     table.input.clear();
-                    table.re_encrypt().unwrap();
+                    table.re_encrypt();
                 } else {
                     // Password didn't exist.
                     table.current_mode = CurrentMode::NoSuchPassword;
