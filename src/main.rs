@@ -12,7 +12,6 @@ use aes_gcm::aead::generic_array::GenericArray;
 use aes_gcm::{Aes128Gcm, NewAead};
 
 mod app;
-// mod stateful_table;
 mod util;
 
 fn main() -> Result<(), Box<dyn Error>> {

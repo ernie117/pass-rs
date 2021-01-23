@@ -55,20 +55,8 @@ impl StatefulPasswordTable {
                         encrypt_known(&self.items[i].password, &self.key, &self.items[i].nonce);
                 }
                 match direction {
-                    MoveDirection::DOWN => {
-                        if i >= self.items.len() - 1 {
-                            0
-                        } else {
-                            i + 1
-                        }
-                    }
-                    MoveDirection::UP => {
-                        if i == 0 {
-                            self.items.len() - 1
-                        } else {
-                            i - 1
-                        }
-                    }
+                    MoveDirection::DOWN => (i + 1) % self.items.len(),
+                    MoveDirection::UP => self.backwards_wraparound(i),
                 }
             }
             None => 0,
@@ -152,5 +140,9 @@ impl StatefulPasswordTable {
         }
 
         Ok(())
+    }
+
+    fn backwards_wraparound(&self, idx: usize) -> usize {
+        (((idx as isize - 1) + self.items.len() as isize) % self.items.len() as isize) as usize
     }
 }
