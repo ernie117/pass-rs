@@ -104,10 +104,9 @@ pub fn delete_password(username_key: &str) -> Result<bool, Box<dyn Error>> {
         Err(e) => panic!("Error serializing from reader: {}", e),
     };
 
-    let result = map.remove_entry(username_key);
-    if result.is_none() {
+    if map.remove_entry(username_key).is_none() {
         return Ok(false);
-    }
+    };
 
     let new_passwords = serde_json::to_string_pretty(&map)?;
 
@@ -169,10 +168,8 @@ fn populate_new_file(
 
     let template = match file_type {
         FileType::Password => json!({}).to_string(),
-        FileType::Config => serde_json::to_string_pretty(&RawConfigs::default()).unwrap(),
-        FileType::Passrc => {
-            serde_json::to_string_pretty(&new_passrc(key.unwrap().as_bytes())).unwrap()
-        }
+        FileType::Config => serde_json::to_string_pretty(&RawConfigs::default())?,
+        FileType::Passrc => serde_json::to_string_pretty(&new_passrc(key.unwrap().as_bytes()))?,
     };
 
     Ok(new_file.write_all(template.as_bytes())?)
@@ -183,10 +180,8 @@ fn new_passrc(key: &[u8]) -> serde_json::Value {
     let mut salt = [0_u8; 16];
     thread_rng().try_fill(&mut salt[..]).unwrap();
 
-    let encoded = argon2::hash_encoded(&key, &salt, &Config::default()).unwrap();
-
     json!({
-        "key": encoded,
+        "key": argon2::hash_encoded(&key, &salt, &Config::default()).unwrap(),
         "salt": salt,
     })
 }
