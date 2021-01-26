@@ -1,19 +1,27 @@
 use crate::util::banner::BANNER;
 use crate::util::configs::CursesConfigs;
 use crate::util::stateful_table::CurrentMode;
-use crate::util::utils::{build_help_messages, TableEntry};
+use crate::util::utils::TableEntry;
+
 use std::io::Stdout;
+
+use lazy_static::lazy_static;
+
 use termion::input::MouseTerminal;
 use termion::raw::RawTerminal;
 use termion::screen::AlternateScreen;
+
 use tui::backend::TermionBackend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans, Text};
-use tui::widgets::{Block, Borders, Cell, Clear, List, Paragraph, Row, Table, TableState, Wrap};
+use tui::widgets::{
+    Block, Borders, Cell, Clear, List, ListItem, Paragraph, Row, Table, TableState, Wrap,
+};
 use tui::Frame;
 
 pub type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>;
+pub type HelpList = Vec<ListItem<'static>>;
 
 static NEW_USERNAME_TITLE: &str = "Enter a new username. Press Esc to cancel";
 static NEW_PASSWORD_TITLE: &str = "Enter a new password. Press Esc to cancel";
@@ -32,6 +40,50 @@ static HELP_BOX_HEIGHT: u16 = 16;
 
 static BANNER_LEN: u16 = 70;
 static BANNER_HEIGHT: u16 = 10;
+
+static BUTTONS: [&str; 14] = [
+    "j/down", "k/up", "Ctrl-d", "Ctrl-u", "g", "G", "M", "y", "d", "r", "c", "D", "?", "q",
+];
+static EFFECTS: [&str; 14] = [
+    "move down",
+    "move up",
+    "move down x5",
+    "move up x5",
+    "jump to top",
+    "jump to bottom",
+    "Jump to middle",
+    "copy password",
+    "decrypt the password",
+    "refresh passwords",
+    "create new password",
+    "delete password",
+    "hide/show help",
+    "quit",
+];
+
+static HELP_MSG_SPACING: usize = 40;
+
+lazy_static! {
+    static ref HELP_MESSAGES: HelpList = {
+        BUTTONS
+            .iter()
+            .zip(EFFECTS.iter())
+            .map(|(b, e)| {
+                let main_str = format!(
+                    "{} {:.<spacing$} {}",
+                    b,
+                    ".",
+                    e,
+                    spacing = (HELP_MSG_SPACING - e.len()) - b.len()
+                );
+                ListItem::new(Text::styled(
+                    format!("{:^69}", main_str),
+                    Style::default().add_modifier(Modifier::ITALIC),
+                ))
+            })
+            .collect::<HelpList>()
+    };
+}
 
 /// Draws the main view including the password table and, optionally, the banner.
 pub fn draw_table(
@@ -148,11 +200,12 @@ pub fn draw_help_window(f: &mut Frame<Backend>) {
             height: HELP_BOX_HEIGHT,
         });
 
-    let messages = build_help_messages();
-    let help = List::new(messages).block(Block::default().borders(Borders::ALL).title("Help"));
+    let help = List::new(HELP_MESSAGES.as_ref())
+        .block(Block::default().borders(Borders::ALL).title("Help"));
 
     f.render_widget(help, rects[0]);
 }
+
 /// Draws the input box for adding/deleting a new password.
 pub fn draw_add_delete_password(
     f: &mut Frame<Backend>,

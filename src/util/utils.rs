@@ -2,9 +2,8 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::io::Write;
 use std::process::{Command, Stdio};
-use tui::style::{Modifier, Style};
-use tui::text::{Span, Text};
-use tui::widgets::{Cell, ListItem, Row};
+use tui::text::Span;
+use tui::widgets::{Cell, Row};
 
 use aes_gcm::aead::{generic_array::GenericArray, Aead};
 use aes_gcm::Aes128Gcm; // Or `Aes256Gcm`
@@ -15,28 +14,6 @@ use rand::Rng;
 use base64::{decode, encode};
 
 use super::json_utils::PasswordEntry;
-
-static BUTTONS: [&str; 14] = [
-    "j/down", "k/up", "Ctrl-d", "Ctrl-u", "g", "G", "M", "y", "d", "r", "c", "D", "?", "q",
-];
-static EFFECTS: [&str; 14] = [
-    "move down",
-    "move up",
-    "move down x5",
-    "move up x5",
-    "jump to top",
-    "jump to bottom",
-    "Jump to middle",
-    "copy password",
-    "decrypt the password",
-    "refresh passwords",
-    "create new password",
-    "delete password",
-    "hide/show help",
-    "quit",
-];
-
-static HELP_MSG_SPACING: usize = 40;
 
 #[derive(Debug)]
 pub struct TableEntry {
@@ -153,25 +130,4 @@ pub fn verify_dev() -> bool {
     } else {
         false
     }
-}
-
-#[inline]
-pub fn build_help_messages() -> Vec<ListItem<'static>> {
-    BUTTONS
-        .iter()
-        .zip(EFFECTS.iter())
-        .map(|(b, e)| {
-            let main_str = format!(
-                "{} {:.<spacing$} {}",
-                b,
-                ".",
-                e,
-                spacing = (HELP_MSG_SPACING - e.len()) - b.len()
-            );
-            ListItem::new(Text::styled(
-                format!("{:^69}", main_str),
-                Style::default().add_modifier(Modifier::ITALIC),
-            ))
-        })
-        .collect::<Vec<ListItem>>()
 }
