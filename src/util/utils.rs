@@ -43,14 +43,14 @@ impl TableEntry {
 
 #[inline]
 pub fn build_table_rows(map: HashMap<String, PasswordEntry>) -> Vec<TableEntry> {
-    let mut vec_of_vecs = map
+    let mut entries = map
         .into_iter()
         .map(|(k, v)| TableEntry::new(k, v.password, v.nonce))
         .collect::<Vec<TableEntry>>();
 
-    vec_of_vecs.sort_by(|a, b| a.service.partial_cmp(&b.service).unwrap());
+    entries.sort_by(|a, b| a.service.partial_cmp(&b.service).unwrap());
 
-    vec_of_vecs
+    entries
 }
 
 #[inline]
@@ -84,7 +84,7 @@ pub fn encrypt(password: &str, aead: &Aes128Gcm) -> (Vec<u8>, String) {
         .collect();
 
     let cipher_text = aead
-        .encrypt(GenericArray::from_slice(&nonce), password.as_bytes())
+        .encrypt(&mut GenericArray::from_slice(&nonce), password.as_bytes())
         .unwrap();
 
     (cipher_text, String::from_utf8(nonce).unwrap())
@@ -94,7 +94,7 @@ pub fn encrypt(password: &str, aead: &Aes128Gcm) -> (Vec<u8>, String) {
 pub fn encrypt_known(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
     encode(
         aead.encrypt(
-            GenericArray::from_slice(nonce.as_bytes()),
+            &mut GenericArray::from_slice(nonce.as_bytes()),
             password.as_bytes(),
         )
         .unwrap(),
@@ -105,7 +105,7 @@ pub fn encrypt_known(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
 pub fn decrypt(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
     let decoded_password = decode(password.as_bytes()).unwrap();
     if let Ok(decrypted) = aead.decrypt(
-        GenericArray::from_slice(nonce.as_bytes()),
+        &mut GenericArray::from_slice(nonce.as_bytes()),
         decoded_password.as_ref(),
     ) {
         String::from_utf8(decrypted).unwrap()
