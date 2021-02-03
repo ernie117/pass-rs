@@ -73,7 +73,7 @@ pub fn copy_to_clipboard(string_to_copy: &str) -> Result<(), Box<dyn Error>> {
         Command::new("pbcopy").stdin(Stdio::piped()).spawn()?
     } else {
         Command::new("xclip")
-            .arg("-selection")
+            .arg("-select")
             .arg("clipboard")
             .stdin(Stdio::piped())
             .spawn()?

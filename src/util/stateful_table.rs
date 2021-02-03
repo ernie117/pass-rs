@@ -535,13 +535,18 @@ mod tests {
         std::thread::sleep(std::time::Duration::from_millis(2));
 
         let result = if cfg!(target_os = "macos") {
-            if let Ok(p) = Command::new("pbpaste").output() {
-                p.stdout
-            } else {
-                panic!("bad stuff");
-            }
+            Command::new("pbpaste")
+                .output()
+                .expect("pbpaste command failed!")
+                .stdout
         } else {
-            unimplemented!();
+            Command::new("xclip")
+                .arg("-select")
+                .arg("clipboard")
+                .arg("-o")
+                .output()
+                .expect("xclip command failed!")
+                .stdout
         };
 
         assert_eq!(
