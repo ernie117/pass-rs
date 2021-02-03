@@ -1,8 +1,11 @@
 use crate::util::inputs::{LeapDirection, MoveDirection};
 use crate::util::json_utils::{read_passwords, write_new_password};
 use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known, TableEntry};
-use aes_gcm::Aes128Gcm;
+use crate::GenericArray;
+use aes_gcm::{Aes128Gcm, NewAead};
 use tui::widgets::TableState;
+
+use std::convert::TryInto;
 
 #[derive(Copy, Clone)]
 pub enum CurrentMode {
@@ -33,6 +36,26 @@ pub struct StatefulPasswordTable {
     pub(crate) state: TableState,
 }
 
+impl Default for StatefulPasswordTable {
+    fn default() -> Self {
+        Self {
+            active: true,
+            current_mode: CurrentMode::Normal,
+            decrypted: false,
+            input: String::new(),
+            items: vec![
+                TableEntry::default(),
+                TableEntry::default(),
+                TableEntry::default(),
+            ],
+            key: Aes128Gcm::new(GenericArray::from_slice(b"testing987654321")),
+            new_username: String::new(),
+            new_password: String::new(),
+            state: TableState::default(),
+        }
+    }
+}
+
 impl StatefulPasswordTable {
     pub(crate) fn new(key: Aes128Gcm) -> StatefulPasswordTable {
         StatefulPasswordTable {
@@ -60,7 +83,10 @@ impl StatefulPasswordTable {
                     MoveDirection::UP => self.backwards_wraparound(i),
                 }
             }
-            None => 0,
+            None => match direction {
+                MoveDirection::DOWN => 0,
+                MoveDirection::UP => self.items.len() - 1,
+            },
         }));
     }
 
@@ -92,7 +118,13 @@ impl StatefulPasswordTable {
     pub fn leap(&mut self, direction: LeapDirection) {
         self.state.select(Some(match direction {
             LeapDirection::TOP => 0,
-            LeapDirection::MIDDLE => self.items.len() / 2,
+            LeapDirection::MIDDLE => {
+                if self.items.len() % 2 == 0 {
+                    (self.items.len() / 2) - 1
+                } else {
+                    self.items.len() / 2
+                }
+            }
             LeapDirection::BOTTOM => self.items.len() - 1,
         }));
     }
@@ -187,6 +219,334 @@ impl StatefulPasswordTable {
     ///
     /// ((index - 1) + k) % k
     fn backwards_wraparound(&self, idx: usize) -> usize {
-        (((idx as isize - 1) + self.items.len() as isize) % self.items.len() as isize) as usize
+        let len_isize = self.items.len() as isize;
+        // Should handle the result properly but I don't think it's
+        // mathematically possible for None to come out of this.
+        (((idx as isize - 1) + len_isize) % len_isize)
+            .try_into()
+            .unwrap()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::process::Command;
+
+    #[test]
+    fn test_highlight_movement_down_from_no_selection() {
+        let mut table = StatefulPasswordTable::default();
+        table.select(MoveDirection::DOWN);
+        assert_eq!(table.state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_highlight_movement_up_from_no_selection() {
+        let mut table = StatefulPasswordTable::default();
+        table.select(MoveDirection::UP);
+        assert_eq!(table.state.selected(), Some(table.items.len() - 1));
+    }
+
+    #[test]
+    fn test_highlight_movement_down_from_first_selection() {
+        let mut table = StatefulPasswordTable::default();
+        table.state.select(Some(0));
+        table.select(MoveDirection::DOWN);
+        assert_eq!(table.state.selected(), Some(1));
+        table.select(MoveDirection::DOWN);
+        assert_eq!(table.state.selected(), Some(2));
+    }
+
+    #[test]
+    fn test_highlight_movement_up_from_last_selection() {
+        let mut table = StatefulPasswordTable::default();
+        table.state.select(Some(table.items.len() - 1));
+        table.select(MoveDirection::UP);
+        assert_eq!(table.state.selected(), Some(1));
+        table.select(MoveDirection::UP);
+        assert_eq!(table.state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_highlight_movement_top_wrap_around() {
+        let mut table = StatefulPasswordTable::default();
+        table.state.select(Some(0));
+        table.select(MoveDirection::UP);
+        assert_eq!(table.state.selected(), Some(table.items.len() - 1));
+    }
+
+    #[test]
+    fn test_highlight_movement_bottom_wrap_around() {
+        let mut table = StatefulPasswordTable::default();
+        table.state.select(Some(table.items.len() - 1));
+        table.select(MoveDirection::DOWN);
+        assert_eq!(table.state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_highlight_movement_down_by_5() {
+        let mut table = StatefulPasswordTable::default();
+        table.items.extend(vec![
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+        ]);
+        table.state.select(Some(0));
+        table.move_by_5(MoveDirection::DOWN);
+        assert_eq!(table.state.selected(), Some(5));
+    }
+
+    #[test]
+    fn test_highlight_movement_up_by_5() {
+        let mut table = StatefulPasswordTable::default();
+        table.items.extend(vec![
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+        ]);
+        table.state.select(Some(table.items.len() - 1));
+        table.move_by_5(MoveDirection::UP);
+        assert_eq!(table.state.selected(), Some(1));
+    }
+
+    #[test]
+    fn test_highlight_movement_down_by_5_when_within_5_moves() {
+        let mut table = StatefulPasswordTable::default();
+        table.items.extend(vec![
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+        ]);
+        assert_eq!(table.items.len(), 10);
+        table.state.select(Some(6));
+        table.move_by_5(MoveDirection::DOWN);
+        assert_eq!(table.state.selected(), Some(table.items.len() - 1));
+    }
+
+    #[test]
+    fn test_highlight_movement_up_by_5_when_within_5_moves() {
+        let mut table = StatefulPasswordTable::default();
+        table
+            .items
+            .extend(vec![TableEntry::default(), TableEntry::default()]);
+        assert_eq!(table.items.len(), 5);
+        table.state.select(Some(2));
+        table.move_by_5(MoveDirection::UP);
+        assert_eq!(table.state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_leap_bottom() {
+        let mut table = StatefulPasswordTable::default();
+        table.items.extend(vec![
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+        ]);
+        assert_eq!(table.items.len(), 10);
+        table.state.select(Some(0));
+        table.leap(LeapDirection::BOTTOM);
+        assert_eq!(table.state.selected(), Some(9));
+    }
+
+    #[test]
+    fn test_leap_bottom_when_no_selection() {
+        let mut table = StatefulPasswordTable::default();
+        table.items.extend(vec![
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+        ]);
+        assert_eq!(table.items.len(), 10);
+        table.leap(LeapDirection::BOTTOM);
+        assert_eq!(table.state.selected(), Some(9));
+    }
+
+    #[test]
+    fn test_leap_top() {
+        let mut table = StatefulPasswordTable::default();
+        table.items.extend(vec![
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+        ]);
+        assert_eq!(table.items.len(), 10);
+        table.state.select(Some(table.items.len() - 1));
+        table.leap(LeapDirection::TOP);
+        assert_eq!(table.state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_leap_top_when_no_selection() {
+        let mut table = StatefulPasswordTable::default();
+        table.items.extend(vec![
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+        ]);
+        assert_eq!(table.items.len(), 10);
+        table.leap(LeapDirection::TOP);
+        assert_eq!(table.state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_leap_middle_when_no_selection_even_items() {
+        let mut table = StatefulPasswordTable::default();
+        table.items.extend(vec![
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+        ]);
+        assert_eq!(table.items.len(), 10);
+        table.leap(LeapDirection::MIDDLE);
+        assert_eq!(table.state.selected(), Some(4));
+    }
+
+    #[test]
+    fn test_leap_middle_with_selection_even_items() {
+        let mut table = StatefulPasswordTable::default();
+        table.items.extend(vec![
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+        ]);
+        assert_eq!(table.items.len(), 10);
+        table.state.select(Some(8));
+        table.leap(LeapDirection::MIDDLE);
+        assert_eq!(table.state.selected(), Some(4));
+    }
+
+    #[test]
+    fn test_leap_middle_with_odd_no_of_items() {
+        let mut table = StatefulPasswordTable::default();
+        table.items.extend(vec![
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+        ]);
+        assert_eq!(table.items.len(), 11);
+        table.state.select(Some(1));
+        table.leap(LeapDirection::MIDDLE);
+        assert_eq!(table.state.selected(), Some(5));
+    }
+
+    #[test]
+    fn test_leap_middle_with_odd_no_of_items_no_selection() {
+        let mut table = StatefulPasswordTable::default();
+        table.items.extend(vec![
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+            TableEntry::default(),
+        ]);
+        assert_eq!(table.items.len(), 11);
+        table.leap(LeapDirection::MIDDLE);
+        assert_eq!(table.state.selected(), Some(5));
+    }
+
+    #[test]
+    fn test_encryption_encrypt() {
+        let mut table = StatefulPasswordTable::default();
+        table.state.select(Some(0));
+        table.decrypt();
+        assert_eq!(
+            table.encryption(EncryptionMode::ENCRYPT, 0),
+            String::from("Fw6SsG9VijR6gMioOvBRcaFzUkgbiGD/hw==")
+        );
+    }
+
+    #[test]
+    fn test_encryption_decrypt() {
+        let table = StatefulPasswordTable::default();
+        assert_eq!(
+            table.encryption(EncryptionMode::DECRYPT, 0),
+            String::from("test_pass")
+        );
+    }
+
+    #[test]
+    fn test_backwards_wraparound_zero_idx() {
+        let mut table = StatefulPasswordTable::default();
+        let current_idx = 0;
+        table.state.select(Some(current_idx));
+        assert_eq!(
+            table.backwards_wraparound(current_idx),
+            table.items.len() - 1
+        );
+    }
+
+    #[test]
+    fn test_backwards_wraparound_nonzero_idx() {
+        let mut table = StatefulPasswordTable::default();
+        let current_idx = 1;
+        table.state.select(Some(current_idx));
+        assert_eq!(table.backwards_wraparound(current_idx), 0);
+    }
+
+    #[test]
+    fn test_copy_to_clipboard() {
+        let mut table = StatefulPasswordTable::default();
+        table.state.select(Some(0));
+        table.copy();
+
+        // Took me way too long to figure this out. Turns out making
+        // system calls is very slow and we have to wait for the
+        // copied password text to make it into `pbcopy` before we can
+        // paste it out with `pbpaste`. Not noticeable when using the
+        // program, thankfully.
+        std::thread::sleep(std::time::Duration::from_millis(2));
+
+        let result = if cfg!(target_os = "macos") {
+            if let Ok(p) = Command::new("pbpaste").output() {
+                p.stdout
+            } else {
+                panic!("bad stuff");
+            }
+        } else {
+            unimplemented!();
+        };
+
+        assert_eq!(
+            String::from_utf8(result).unwrap(),
+            String::from("test_pass")
+        );
     }
 }

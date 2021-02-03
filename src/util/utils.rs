@@ -6,7 +6,7 @@ use tui::text::Span;
 use tui::widgets::{Cell, Row};
 
 use aes_gcm::aead::{generic_array::GenericArray, Aead};
-use aes_gcm::Aes128Gcm; // Or `Aes256Gcm`
+use aes_gcm::{Aes128Gcm, NewAead};
 
 use rand::distributions::Alphanumeric;
 use rand::Rng;
@@ -20,6 +20,20 @@ pub struct TableEntry {
     pub(crate) service: String,
     pub(crate) password: String,
     pub(crate) nonce: String,
+}
+
+impl Default for TableEntry {
+    fn default() -> Self {
+        let cipher = Aes128Gcm::new(GenericArray::from_slice(b"testing987654321"));
+        let nonce = "asdfjklqasdf";
+        let password = encrypt_known("test_pass", &cipher, nonce);
+
+        Self {
+            service: String::from("test_user"),
+            password,
+            nonce: String::from(nonce),
+        }
+    }
 }
 
 impl TableEntry {
@@ -84,7 +98,7 @@ pub fn encrypt(password: &str, aead: &Aes128Gcm) -> (Vec<u8>, String) {
         .collect();
 
     let cipher_text = aead
-        .encrypt(&mut GenericArray::from_slice(&nonce), password.as_bytes())
+        .encrypt(&GenericArray::from_slice(&nonce), password.as_bytes())
         .unwrap();
 
     (cipher_text, String::from_utf8(nonce).unwrap())
@@ -94,7 +108,7 @@ pub fn encrypt(password: &str, aead: &Aes128Gcm) -> (Vec<u8>, String) {
 pub fn encrypt_known(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
     encode(
         aead.encrypt(
-            &mut GenericArray::from_slice(nonce.as_bytes()),
+            &GenericArray::from_slice(nonce.as_bytes()),
             password.as_bytes(),
         )
         .unwrap(),
@@ -105,7 +119,7 @@ pub fn encrypt_known(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
 pub fn decrypt(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
     let decoded_password = decode(password.as_bytes()).unwrap();
     if let Ok(decrypted) = aead.decrypt(
-        &mut GenericArray::from_slice(nonce.as_bytes()),
+        &GenericArray::from_slice(nonce.as_bytes()),
         decoded_password.as_ref(),
     ) {
         String::from_utf8(decrypted).unwrap()
