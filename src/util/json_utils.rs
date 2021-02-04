@@ -138,7 +138,7 @@ pub fn check_directory_exists() -> Result<(), Box<dyn Error>> {
 
 pub fn check_files(key: String) -> Result<(), Box<dyn Error>> {
     let home_dir = &get_home_dir();
-    let build_path = |ft: FileType| { format!("{}/{}.json", home_dir, ft) };
+    let build_path = |ft: FileType| format!("{}/{}.json", home_dir, ft);
     let passwords_path = build_path(FileType::Passwords);
     if !Path::new(&passwords_path).exists() {
         println!("Creating passwords json file...");

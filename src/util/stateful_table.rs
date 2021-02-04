@@ -271,7 +271,7 @@ impl StatefulPasswordTable {
     fn is_service_present(&self) -> bool {
         for entry in &self.items {
             if entry.service == self.input {
-                return true
+                return true;
             }
         }
 

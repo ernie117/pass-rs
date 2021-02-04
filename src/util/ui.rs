@@ -143,9 +143,13 @@ pub fn draw_table(
 
     let rows: Vec<_> = table_items.iter().map(|i| i.to_cells()).collect();
 
-    let header_cells = ["Username", "Password"]
-        .iter()
-        .map(|h| Cell::from(*h).style(Style::default().add_modifier(cfg.title_style)));
+    let header_cells = ["Username", "Password"].iter().map(|h| {
+        Cell::from(*h).style(
+            Style::default()
+                .add_modifier(Modifier::UNDERLINED)
+                .add_modifier(cfg.title_style),
+        )
+    });
 
     let header = Row::new(header_cells).style(Style::default().fg(Color::Yellow));
 
