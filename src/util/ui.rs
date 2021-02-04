@@ -28,6 +28,7 @@ static DELETE_PASSWORD: &str = "Enter username of password to delete. Press Esc 
 static PASSWORD_CREATED: &str = "Password created! Press any key to close";
 static PASSWORD_DELETED: &str = "Password deleted! Press any key to close";
 static NO_SUCH_PASSWORD: &str = "No such password! Press any key to close";
+static PASSWORD_EXISTS: &str = "Password already exists for this service! Press any key to close";
 static BOX_WIDTH: u16 = 70;
 static BOX_HEIGHT: u16 = 20;
 
@@ -237,6 +238,7 @@ pub fn draw_add_delete_password(
         CurrentMode::PasswordDeleted => PASSWORD_DELETED,
         CurrentMode::PasswordCreated => PASSWORD_CREATED,
         CurrentMode::NoSuchPassword => NO_SUCH_PASSWORD,
+        CurrentMode::PasswordExists => PASSWORD_EXISTS,
         _ => "UNKNOWN MODE",
     };
     let text = Text::styled(table_input, Style::default());

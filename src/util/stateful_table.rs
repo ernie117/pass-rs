@@ -17,6 +17,7 @@ pub enum CurrentMode {
     DeletePassword,
     PasswordDeleted,
     NoSuchPassword,
+    PasswordExists,
 }
 
 pub enum EntryState {
@@ -191,6 +192,10 @@ impl StatefulPasswordTable {
     pub fn new_username(&mut self) {
         if self.input.is_empty() {
             // do nothing
+        } else if self.is_service_present() {
+            // TODO Need to offer retry or exit.
+            self.current_mode = CurrentMode::PasswordExists;
+            self.input.clear();
         } else {
             self.new_username.push_str(&self.input);
             self.input.clear();
@@ -261,6 +266,16 @@ impl StatefulPasswordTable {
                 decrypt(&self.items[idx].password, &self.key, &self.items[idx].nonce)
             }
         }
+    }
+
+    fn is_service_present(&self) -> bool {
+        for entry in &self.items {
+            if entry.service == self.input {
+                return true
+            }
+        }
+
+        false
     }
 
     /// Decrements the highlighted index by 1 and wraps around to the last element

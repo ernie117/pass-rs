@@ -45,7 +45,8 @@ pub fn run(terminal: &mut Terminal<Backend>, key: Aes128Gcm) -> Result<(), Box<d
                 | CurrentMode::PasswordCreated
                 | CurrentMode::DeletePassword
                 | CurrentMode::PasswordDeleted
-                | CurrentMode::NoSuchPassword => {
+                | CurrentMode::NoSuchPassword
+                | CurrentMode::PasswordExists => {
                     ui::draw_table(
                         &mut table.state,
                         &table.items,
@@ -73,7 +74,8 @@ pub fn run(terminal: &mut Terminal<Backend>, key: Aes128Gcm) -> Result<(), Box<d
             #[rustfmt::skip]
             CurrentMode::NewUserName
             | CurrentMode::NewPassword
-            | CurrentMode::PasswordCreated => {
+            | CurrentMode::PasswordCreated
+            | CurrentMode::PasswordExists => {
                 if let Event::Input(key) = events.next()? {
                     inputs::add_password_input_handler(&mut table, key)?;
                 }

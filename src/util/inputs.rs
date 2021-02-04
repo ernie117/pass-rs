@@ -87,7 +87,6 @@ pub fn add_password_input_handler(
                 table.current_mode = CurrentMode::Normal;
                 table.clear_inputs();
             }
-            // TODO Need to check whether a password currently exists for the given service.
             Key::Char('\n') => {
                 table.new_username();
             }
@@ -115,7 +114,7 @@ pub fn add_password_input_handler(
             }
             _ => {}
         },
-        CurrentMode::PasswordCreated => {
+        CurrentMode::PasswordCreated | CurrentMode::PasswordExists => {
             table.current_mode = CurrentMode::Normal;
         }
         _ => {}
