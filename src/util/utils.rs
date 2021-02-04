@@ -2,11 +2,9 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::io::Write;
 use std::process::{Command, Stdio};
-use tui::text::Span;
-use tui::widgets::{Cell, Row};
 
 use aes_gcm::aead::{generic_array::GenericArray, Aead};
-use aes_gcm::{Aes128Gcm, NewAead};
+use aes_gcm::Aes128Gcm;
 
 use rand::distributions::Alphanumeric;
 use rand::Rng;
@@ -14,46 +12,7 @@ use rand::Rng;
 use base64::{decode, encode};
 
 use super::json_utils::PasswordEntry;
-
-#[derive(Debug)]
-pub struct TableEntry {
-    pub(crate) service: String,
-    pub(crate) password: String,
-    pub(crate) nonce: String,
-}
-
-impl Default for TableEntry {
-    fn default() -> Self {
-        let cipher = Aes128Gcm::new(GenericArray::from_slice(b"testing987654321"));
-        let nonce = "asdfjklqasdf";
-        let password = encrypt_known("test_pass", &cipher, nonce);
-
-        Self {
-            service: String::from("test_user"),
-            password,
-            nonce: String::from(nonce),
-        }
-    }
-}
-
-impl TableEntry {
-    fn new(service: String, password: String, nonce: String) -> Self {
-        Self {
-            service,
-            password,
-            nonce,
-        }
-    }
-
-    pub fn to_cells(&self) -> Row {
-        Row::new(
-            [&self.service, &self.password, &self.nonce]
-                .iter()
-                .map(|e| Cell::from(Span::raw(*e)))
-                .collect::<Vec<Cell>>(),
-        )
-    }
-}
+use crate::util::stateful_table::TableEntry;
 
 #[inline]
 pub fn build_table_rows(map: HashMap<String, PasswordEntry>) -> Vec<TableEntry> {

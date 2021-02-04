@@ -1,8 +1,9 @@
 use crate::util::inputs::{LeapDirection, MoveDirection};
 use crate::util::json_utils::{delete_password, read_passwords, write_new_password};
-use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known, TableEntry};
-use aes_gcm::Aes128Gcm;
-use tui::widgets::TableState;
+use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known};
+use aes_gcm::{aead::generic_array::GenericArray, NewAead, Aes128Gcm};
+use tui::widgets::{Cell, Row, TableState};
+use tui::text::Span;
 
 use std::convert::TryInto;
 
@@ -26,6 +27,46 @@ pub enum EntryState {
 enum EncryptionMode {
     ENCRYPT,
     DECRYPT,
+}
+
+#[derive(Debug)]
+pub struct TableEntry {
+    pub(crate) service: String,
+    pub(crate) password: String,
+    pub(crate) nonce: String,
+}
+
+impl Default for TableEntry {
+    fn default() -> Self {
+        let cipher = Aes128Gcm::new(GenericArray::from_slice(b"testing987654321"));
+        let nonce = "asdfjklqasdf";
+        let password = encrypt_known("test_pass", &cipher, nonce);
+
+        Self {
+            service: String::from("test_user"),
+            password,
+            nonce: String::from(nonce),
+        }
+    }
+}
+
+impl TableEntry {
+    pub fn new(service: String, password: String, nonce: String) -> Self {
+        Self {
+            service,
+            password,
+            nonce,
+        }
+    }
+
+    pub fn to_cells(&self) -> Row {
+        Row::new(
+            [&self.service, &self.password, &self.nonce]
+              .iter()
+              .map(|e| Cell::from(Span::raw(*e)))
+              .collect::<Vec<Cell>>(),
+        )
+    }
 }
 
 pub struct StatefulPasswordTable {

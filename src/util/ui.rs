@@ -1,7 +1,6 @@
 use crate::util::banner::BANNER;
 use crate::util::configs::CursesConfigs;
-use crate::util::stateful_table::CurrentMode;
-use crate::util::utils::TableEntry;
+use crate::util::stateful_table::{CurrentMode, TableEntry};
 
 use std::io::Stdout;
 
