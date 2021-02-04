@@ -15,10 +15,20 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Write};
 use std::path::Path;
 
-enum FileType {
-    Password,
+pub enum FileType {
+    Passwords,
     Config,
     Passrc,
+}
+
+impl std::fmt::Display for FileType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      match *self {
+          FileType::Config => write!(f, "config"),
+          FileType::Passrc => write!(f, "passrc"),
+          FileType::Passwords => write!(f, "passwords"),
+      }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -38,7 +48,7 @@ impl PasswordEntry {
 
 #[inline]
 pub fn read_passwords() -> Result<HashMap<String, PasswordEntry>, Box<dyn Error>> {
-    let bufreader = read_json_file("passwords")?;
+    let bufreader = read_json_file(FileType::Passwords)?;
     let map: HashMap<String, PasswordEntry>;
     match serde_json::from_reader(bufreader) {
         Ok(s) => map = s,
@@ -50,7 +60,7 @@ pub fn read_passwords() -> Result<HashMap<String, PasswordEntry>, Box<dyn Error>
 
 #[inline]
 pub fn read_config() -> Result<CursesConfigs, Box<dyn Error>> {
-    let bufreader = read_json_file("config")?;
+    let bufreader = read_json_file(FileType::Config)?;
     let raw_config: RawConfigs = serde_json::from_reader(bufreader)?;
     let cfg = CursesConfigs::new(
         raw_config.border_type,
@@ -62,28 +72,28 @@ pub fn read_config() -> Result<CursesConfigs, Box<dyn Error>> {
 }
 
 #[inline]
-pub fn read_json_file(path: &str) -> Result<BufReader<File>, Box<dyn Error>> {
-    let full_path = format!("{}/{}.json", get_home_dir(), path);
+pub fn read_json_file(file: FileType) -> Result<BufReader<File>, Box<dyn Error>> {
+    let full_path = format!("{}/{}.json", get_home_dir(), file);
     let file = OpenOptions::new().read(true).write(true).open(&full_path)?;
 
     Ok(BufReader::new(file))
 }
 
 pub fn write_new_password(
-    new_username: &str,
-    new_password: &str,
+    new_username: String,
+    new_password: String,
     key: &Aes128Gcm,
 ) -> Result<(), Box<dyn Error>> {
-    let bufreader = read_json_file("passwords")?;
+    let bufreader = read_json_file(FileType::Passwords)?;
     let mut map: HashMap<String, PasswordEntry> = match serde_json::from_reader(bufreader) {
         Ok(s) => s,
         Err(e) => panic!("Error serializing from reader: {}", e),
     };
 
-    let (encrypted_pwd, pwd_nonce) = encrypt(new_password, &key);
+    let (encrypted_pwd, pwd_nonce) = encrypt(&new_password, &key);
     let new_entry = PasswordEntry::new(encode(encrypted_pwd), pwd_nonce);
 
-    map.insert(new_username.to_string(), new_entry);
+    map.insert(new_username, new_entry);
 
     let new_passwords = serde_json::to_string_pretty(&map)?;
 
@@ -99,7 +109,7 @@ pub fn write_new_password(
 }
 
 pub fn delete_password(username_key: &str) -> Result<EntryState, Box<dyn Error>> {
-    let bufreader = read_json_file("passwords")?;
+    let bufreader = read_json_file(FileType::Passwords)?;
     let mut map: HashMap<String, PasswordEntry> = match serde_json::from_reader(bufreader) {
         Ok(s) => s,
         Err(e) => panic!("Error serializing from reader: {}", e),
@@ -139,7 +149,7 @@ pub fn check_files(key: String) -> Result<(), Box<dyn Error>> {
     let passwords_path = format!("{}/{}.json", home_dir, "passwords");
     if !Path::new(&passwords_path).exists() {
         println!("Creating passwords json file...");
-        populate_new_file(FileType::Password, passwords_path, None)?;
+        populate_new_file(FileType::Passwords, passwords_path, None)?;
     }
     let config_path = format!("{}/{}.json", home_dir, "config");
     if !Path::new(&config_path).exists() {
@@ -168,7 +178,7 @@ fn populate_new_file(
         .open(&path)?;
 
     let template = match file_type {
-        FileType::Password => json!({}).to_string(),
+        FileType::Passwords => json!({}).to_string(),
         FileType::Config => serde_json::to_string_pretty(&RawConfigs::default())?,
         FileType::Passrc => serde_json::to_string_pretty(&new_passrc(key.unwrap().as_bytes()))?,
     };

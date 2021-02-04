@@ -1,9 +1,9 @@
 use crate::util::inputs::{LeapDirection, MoveDirection};
 use crate::util::json_utils::{delete_password, read_passwords, write_new_password};
 use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known};
-use aes_gcm::{aead::generic_array::GenericArray, NewAead, Aes128Gcm};
-use tui::widgets::{Cell, Row, TableState};
+use aes_gcm::{aead::generic_array::GenericArray, Aes128Gcm, NewAead};
 use tui::text::Span;
+use tui::widgets::{Cell, Row, TableState};
 
 use std::convert::TryInto;
 
@@ -62,9 +62,9 @@ impl TableEntry {
     pub fn to_cells(&self) -> Row {
         Row::new(
             [&self.service, &self.password, &self.nonce]
-              .iter()
-              .map(|e| Cell::from(Span::raw(*e)))
-              .collect::<Vec<Cell>>(),
+                .iter()
+                .map(|e| Cell::from(Span::raw(*e)))
+                .collect::<Vec<Cell>>(),
         )
     }
 }
@@ -208,10 +208,13 @@ impl StatefulPasswordTable {
 
             if !self.new_username.is_empty()
                 && !self.new_password.is_empty()
-                && write_new_password(&self.new_username, &self.new_password, &self.key).is_ok()
+                && write_new_password(
+                    self.new_username.drain(..).collect(),
+                    self.new_password.drain(..).collect(),
+                    &self.key,
+                )
+                .is_ok()
             {
-                self.new_username.clear();
-                self.new_password.clear();
                 self.re_encrypt();
             }
         }
