@@ -15,7 +15,7 @@ pub fn run(terminal: &mut Terminal<Backend>, key: Aes128Gcm) -> Result<(), Box<d
     let mut table = StatefulPasswordTable::new(key);
     table.items = build_table_rows(read_passwords()?);
 
-    while table.active {
+    loop {
         // Reading the config in the loop allows for live editing of colours/style/etc.
         let cfg = match read_config() {
             Ok(c) => c,
@@ -85,6 +85,10 @@ pub fn run(terminal: &mut Terminal<Backend>, key: Aes128Gcm) -> Result<(), Box<d
                     inputs::delete_password_input_handler(&mut table, key);
                 }
             }
+        }
+
+        if !table.active {
+            break;
         }
     }
 

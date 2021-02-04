@@ -45,7 +45,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     terminal.hide_cursor()?;
 
     if let Err(error) = app::run(&mut terminal, aead) {
-        terminal.show_cursor()?;
         std::fs::write("debugging.txt", format!("Error rendering table: {}", error)).unwrap();
     }
 

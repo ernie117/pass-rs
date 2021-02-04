@@ -23,11 +23,11 @@ pub enum FileType {
 
 impl std::fmt::Display for FileType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-      match *self {
-          FileType::Config => write!(f, "config"),
-          FileType::Passrc => write!(f, "passrc"),
-          FileType::Passwords => write!(f, "passwords"),
-      }
+        match *self {
+            FileType::Config => write!(f, "config"),
+            FileType::Passrc => write!(f, "passrc"),
+            FileType::Passwords => write!(f, "passwords"),
+        }
     }
 }
 
@@ -85,51 +85,43 @@ pub fn write_new_password(
     key: &Aes128Gcm,
 ) -> Result<(), Box<dyn Error>> {
     let bufreader = read_json_file(FileType::Passwords)?;
-    let mut map: HashMap<String, PasswordEntry> = match serde_json::from_reader(bufreader) {
-        Ok(s) => s,
-        Err(e) => panic!("Error serializing from reader: {}", e),
-    };
+    if let Ok(mut map) = serde_json::from_reader::<_, HashMap<String, PasswordEntry>>(bufreader) {
+        let (encrypted_pwd, pwd_nonce) = encrypt(&new_password, &key);
+        let new_entry = PasswordEntry::new(encode(encrypted_pwd), pwd_nonce);
 
-    let (encrypted_pwd, pwd_nonce) = encrypt(&new_password, &key);
-    let new_entry = PasswordEntry::new(encode(encrypted_pwd), pwd_nonce);
+        map.insert(new_username, new_entry);
 
-    map.insert(new_username, new_entry);
-
-    let new_passwords = serde_json::to_string_pretty(&map)?;
-
-    let passwords_path = format!("{}/{}.json", &get_home_dir(), "passwords");
-    let mut file = OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .open(&passwords_path)?;
-
-    file.write_all(new_passwords.as_bytes())?;
-
-    Ok(())
+        write_to_passwords_file(serde_json::to_string_pretty(&map)?)
+    } else {
+        panic!("Unable to read from passwords file!");
+    }
 }
 
 pub fn delete_password(username_key: &str) -> Result<EntryState, Box<dyn Error>> {
     let bufreader = read_json_file(FileType::Passwords)?;
-    let mut map: HashMap<String, PasswordEntry> = match serde_json::from_reader(bufreader) {
-        Ok(s) => s,
-        Err(e) => panic!("Error serializing from reader: {}", e),
-    };
+    if let Ok(mut map) = serde_json::from_reader::<_, HashMap<String, PasswordEntry>>(bufreader) {
+        if map.remove_entry(username_key).is_none() {
+            return Ok(EntryState::NoSuchPassword);
+        };
 
-    if map.remove_entry(username_key).is_none() {
-        return Ok(EntryState::NoSuchPassword);
-    };
+        write_to_passwords_file(serde_json::to_string_pretty(&map)?)?;
 
-    let new_passwords = serde_json::to_string_pretty(&map)?;
+        Ok(EntryState::PasswordDeleted)
+    } else {
+        panic!("Unable to read from passwords file!");
+    }
+}
 
-    let passwords_path = format!("{}/{}.json", &get_home_dir(), "passwords");
+#[inline]
+fn write_to_passwords_file(new_passwords: String) -> Result<(), Box<dyn Error>> {
+    let passwords_path = format!("{}/{}.json", &get_home_dir(), FileType::Passwords);
     let mut file = OpenOptions::new()
         .write(true)
         .truncate(true)
         .open(&passwords_path)?;
 
     file.write_all(new_passwords.as_bytes())?;
-
-    Ok(EntryState::PasswordDeleted)
+    Ok(())
 }
 
 #[inline]
@@ -146,17 +138,18 @@ pub fn check_directory_exists() -> Result<(), Box<dyn Error>> {
 
 pub fn check_files(key: String) -> Result<(), Box<dyn Error>> {
     let home_dir = &get_home_dir();
-    let passwords_path = format!("{}/{}.json", home_dir, "passwords");
+    let build_path = |ft: FileType| { format!("{}/{}.json", home_dir, ft) };
+    let passwords_path = build_path(FileType::Passwords);
     if !Path::new(&passwords_path).exists() {
         println!("Creating passwords json file...");
         populate_new_file(FileType::Passwords, passwords_path, None)?;
     }
-    let config_path = format!("{}/{}.json", home_dir, "config");
+    let config_path = build_path(FileType::Config);
     if !Path::new(&config_path).exists() {
         println!("Creating configuration json file...");
         populate_new_file(FileType::Config, config_path, None)?;
     }
-    let passrc_path = format!("{}/{}.json", home_dir, "passrc");
+    let passrc_path = build_path(FileType::Passrc);
     if !Path::new(&passrc_path).exists() {
         println!("Creating passrc json file...");
         populate_new_file(FileType::Passrc, passrc_path, Some(key))?;
