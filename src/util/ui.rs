@@ -25,10 +25,10 @@ pub type HelpList = Vec<ListItem<'static>>;
 
 static NEW_USERNAME_TITLE: &str = "Enter a new username. Press Esc to cancel";
 static NEW_PASSWORD_TITLE: &str = "Enter a new password. Press Esc to cancel";
-static PASSWORD_CREATED: &str = "Password created! Press Esc to close";
 static DELETE_PASSWORD: &str = "Enter username of password to delete. Press Esc to cancel";
-static PASSWORD_DELETED: &str = "Password deleted! Press Esc to close";
-static NO_SUCH_PASSWORD: &str = "No such password! Press Esc to close";
+static PASSWORD_CREATED: &str = "Password created! Press any key to close";
+static PASSWORD_DELETED: &str = "Password deleted! Press any key to close";
+static NO_SUCH_PASSWORD: &str = "No such password! Press any key to close";
 static BOX_WIDTH: u16 = 70;
 static BOX_HEIGHT: u16 = 20;
 

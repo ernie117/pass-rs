@@ -1,4 +1,5 @@
 use crate::util::configs::{CursesConfigs, RawConfigs};
+use crate::util::stateful_table::EntryState;
 use crate::util::utils::encrypt;
 use aes_gcm::Aes128Gcm;
 use argon2::Config;
@@ -97,7 +98,7 @@ pub fn write_new_password(
     Ok(())
 }
 
-pub fn delete_password(username_key: &str) -> Result<bool, Box<dyn Error>> {
+pub fn delete_password(username_key: &str) -> Result<EntryState, Box<dyn Error>> {
     let bufreader = read_json_file("passwords")?;
     let mut map: HashMap<String, PasswordEntry> = match serde_json::from_reader(bufreader) {
         Ok(s) => s,
@@ -105,7 +106,7 @@ pub fn delete_password(username_key: &str) -> Result<bool, Box<dyn Error>> {
     };
 
     if map.remove_entry(username_key).is_none() {
-        return Ok(false);
+        return Ok(EntryState::NoSuchPassword);
     };
 
     let new_passwords = serde_json::to_string_pretty(&map)?;
@@ -118,7 +119,7 @@ pub fn delete_password(username_key: &str) -> Result<bool, Box<dyn Error>> {
 
     file.write_all(new_passwords.as_bytes())?;
 
-    Ok(true)
+    Ok(EntryState::PasswordDeleted)
 }
 
 #[inline]

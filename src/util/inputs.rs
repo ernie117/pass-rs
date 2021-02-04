@@ -1,4 +1,3 @@
-use crate::util::json_utils::delete_password;
 use crate::util::stateful_table::{CurrentMode, StatefulPasswordTable};
 use std::io::Write;
 use termion::event::Key;
@@ -86,8 +85,7 @@ pub fn add_password_input_handler(
         CurrentMode::NewUserName => match key {
             Key::Esc => {
                 table.current_mode = CurrentMode::Normal;
-                table.input.clear();
-                table.new_username.clear();
+                table.clear_inputs();
             }
             // TODO Need to check whether a password currently exists for the given service.
             Key::Char('\n') => {
@@ -104,9 +102,7 @@ pub fn add_password_input_handler(
         CurrentMode::NewPassword => match key {
             Key::Esc => {
                 table.current_mode = CurrentMode::Normal;
-                table.input.clear();
-                table.new_username.clear();
-                table.new_password.clear();
+                table.clear_inputs();
             }
             Key::Char('\n') => {
                 table.new_password();
@@ -120,9 +116,7 @@ pub fn add_password_input_handler(
             _ => {}
         },
         CurrentMode::PasswordCreated => {
-            if let Key::Esc = key {
-                table.current_mode = CurrentMode::Normal;
-            }
+            table.current_mode = CurrentMode::Normal;
         }
         _ => {}
     }
@@ -134,23 +128,10 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
         CurrentMode::DeletePassword => match key {
             Key::Esc => {
                 table.current_mode = CurrentMode::Normal;
-                table.input.clear();
+                table.clear_inputs();
             }
             Key::Char('\n') => {
-                if table.input.is_empty() {
-                    return;
-                }
-                let result = delete_password(&table.input).unwrap();
-                if result {
-                    // Password existed.
-                    table.current_mode = CurrentMode::PasswordDeleted;
-                    table.input.clear();
-                    table.re_encrypt();
-                } else {
-                    // Password didn't exist.
-                    table.current_mode = CurrentMode::NoSuchPassword;
-                    table.input.clear();
-                }
+                table.delete_entry();
             }
             Key::Char(c) => {
                 table.input.push(c);
@@ -161,9 +142,7 @@ pub fn delete_password_input_handler(table: &mut StatefulPasswordTable, key: Key
             _ => {}
         },
         CurrentMode::PasswordDeleted | CurrentMode::NoSuchPassword => {
-            if let Key::Esc = key {
-                table.current_mode = CurrentMode::Normal;
-            }
+            table.current_mode = CurrentMode::Normal;
         }
         _ => {}
     }

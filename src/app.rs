@@ -6,8 +6,7 @@ use crate::util::event::{Event, Events};
 use crate::util::inputs;
 use crate::util::json_utils::{read_config, read_passwords};
 use crate::util::stateful_table::{CurrentMode, StatefulPasswordTable};
-use crate::util::ui;
-use crate::util::ui::Backend;
+use crate::util::ui::{self, Backend};
 use crate::util::utils::build_table_rows;
 use aes_gcm::Aes128Gcm;
 
