@@ -36,7 +36,7 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
             table.current_mode = CurrentMode::DeletePassword;
         }
         Key::Char('q') => {
-            table.active = false;
+            table.current_mode = CurrentMode::Exit;
         }
         Key::Ctrl('d') => {
             table.move_by_5(MoveDirection::DOWN);
@@ -69,7 +69,7 @@ pub fn with_help_input_handler(table: &mut StatefulPasswordTable, key: Key) {
             table.current_mode = CurrentMode::Normal;
         }
         Key::Char('q') => {
-            table.active = false;
+            table.current_mode = CurrentMode::Exit;
         }
         _ => {}
     }

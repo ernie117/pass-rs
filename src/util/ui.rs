@@ -1,6 +1,6 @@
 use crate::util::banner::BANNER;
 use crate::util::configs::CursesConfigs;
-use crate::util::stateful_table::{CurrentMode, TableEntry};
+use crate::util::stateful_table::{CurrentMode, TableUIDetails};
 
 use std::io::Stdout;
 
@@ -14,9 +14,7 @@ use tui::backend::TermionBackend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans, Text};
-use tui::widgets::{
-    Block, Borders, Cell, Clear, List, ListItem, Paragraph, Row, Table, TableState, Wrap,
-};
+use tui::widgets::{Block, Borders, Cell, Clear, List, ListItem, Paragraph, Row, Table, Wrap};
 use tui::Frame;
 
 pub type Backend = TermionBackend<AlternateScreen<MouseTerminal<RawTerminal<Stdout>>>>;
@@ -87,14 +85,12 @@ lazy_static! {
 
 /// Draws the main view including the password table and, optionally, the banner.
 pub fn draw_table(
-    table_state: &mut TableState,
-    table_items: &[TableEntry],
+    table_details: TableUIDetails,
     cfg: &CursesConfigs,
     f: &mut Frame<Backend>,
-    table_decrypted: &bool,
     show_banner: Option<bool>,
 ) {
-    let highlight_colour = if *table_decrypted {
+    let highlight_colour = if *table_details.decrypted {
         Color::Green
     } else {
         Color::Red
@@ -141,7 +137,7 @@ pub fn draw_table(
             height: f.size().height - 3,
         });
 
-    let rows: Vec<_> = table_items.iter().map(|i| i.to_cells()).collect();
+    let rows: Vec<_> = table_details.items.iter().map(|i| i.to_cells()).collect();
 
     let header_cells = ["Username", "Password"].iter().map(|h| {
         Cell::from(*h).style(
@@ -169,7 +165,7 @@ pub fn draw_table(
         .style(Style::default().fg(Color::White))
         .column_spacing(1);
 
-    f.render_stateful_widget(t, rects[0], table_state);
+    f.render_stateful_widget(t, rects[0], table_details.state);
 
     let rects_2 = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())

@@ -18,6 +18,7 @@ pub enum CurrentMode {
     PasswordDeleted,
     NoSuchPassword,
     PasswordExists,
+    Exit,
 }
 
 pub enum EntryState {
@@ -70,8 +71,13 @@ impl TableEntry {
     }
 }
 
+pub struct TableUIDetails<'a> {
+    pub state: &'a mut TableState,
+    pub items: &'a Vec<TableEntry>,
+    pub decrypted: &'a bool,
+}
+
 pub struct StatefulPasswordTable {
-    pub(crate) active: bool,
     pub(crate) current_mode: CurrentMode,
     pub(crate) decrypted: bool,
     pub(crate) input: String,
@@ -85,7 +91,6 @@ pub struct StatefulPasswordTable {
 impl StatefulPasswordTable {
     pub(crate) fn new(key: Aes128Gcm) -> StatefulPasswordTable {
         StatefulPasswordTable {
-            active: true,
             current_mode: CurrentMode::Normal,
             decrypted: false,
             input: String::new(),
@@ -106,7 +111,7 @@ impl StatefulPasswordTable {
                 }
                 match direction {
                     MoveDirection::DOWN => (i + 1) % self.items.len(),
-                    MoveDirection::UP => self.backwards_wraparound(i),
+                    MoveDirection::UP => self.decrement_wraparound(i),
                 }
             }
             None => match direction {
@@ -257,6 +262,14 @@ impl StatefulPasswordTable {
         }
     }
 
+    pub fn ui_details(&mut self) -> TableUIDetails {
+        TableUIDetails {
+            state: &mut self.state,
+            items: &self.items,
+            decrypted: &self.decrypted,
+        }
+    }
+
     fn encryption(&self, mode: EncryptionMode, idx: usize) -> String {
         match mode {
             EncryptionMode::ENCRYPT => {
@@ -284,7 +297,7 @@ impl StatefulPasswordTable {
     /// Follows this formula:
     ///
     /// ((index - 1) + k) % k
-    fn backwards_wraparound(&self, idx: usize) -> usize {
+    fn decrement_wraparound(&self, idx: usize) -> usize {
         // Should handle the results of these `try_into`s properly
         // but I don't think it's mathematically possible for None
         // to come out of either of them. The index coming in should
@@ -308,7 +321,6 @@ mod tests {
     impl Default for StatefulPasswordTable {
         fn default() -> Self {
             Self {
-                active: true,
                 current_mode: CurrentMode::Normal,
                 decrypted: false,
                 input: String::new(),
@@ -514,7 +526,7 @@ mod tests {
         let current_idx = 0;
         table.state.select(Some(current_idx));
         assert_eq!(
-            table.backwards_wraparound(current_idx),
+            table.decrement_wraparound(current_idx),
             table.items.len() - 1
         );
     }
@@ -524,7 +536,7 @@ mod tests {
         let mut table = StatefulPasswordTable::default();
         let current_idx = 1;
         table.state.select(Some(current_idx));
-        assert_eq!(table.backwards_wraparound(current_idx), 0);
+        assert_eq!(table.decrement_wraparound(current_idx), 0);
     }
 
     #[test]
@@ -538,7 +550,7 @@ mod tests {
         // copied password text to make it into `pbcopy` before we can
         // paste it out with `pbpaste`. Not noticeable when using the
         // program, thankfully.
-        std::thread::sleep(std::time::Duration::from_millis(4));
+        std::thread::sleep(std::time::Duration::from_millis(5));
 
         let result = if cfg!(target_os = "macos") {
             Command::new("pbpaste")

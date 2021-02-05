@@ -28,14 +28,7 @@ pub fn run(terminal: &mut Terminal<Backend>, key: Aes128Gcm) -> Result<(), Box<d
         terminal.draw(|mut f| {
             match table.current_mode {
                 CurrentMode::Normal => {
-                    ui::draw_table(
-                        &mut table.state,
-                        &table.items,
-                        &cfg,
-                        &mut f,
-                        &table.decrypted,
-                        None,
-                    );
+                    ui::draw_table(table.ui_details(), &cfg, &mut f, None);
                 }
                 CurrentMode::WithHelp => {
                     ui::draw_help_window(&mut f);
@@ -47,16 +40,10 @@ pub fn run(terminal: &mut Terminal<Backend>, key: Aes128Gcm) -> Result<(), Box<d
                 | CurrentMode::PasswordDeleted
                 | CurrentMode::NoSuchPassword
                 | CurrentMode::PasswordExists => {
-                    ui::draw_table(
-                        &mut table.state,
-                        &table.items,
-                        &cfg,
-                        &mut f,
-                        &table.decrypted,
-                        None,
-                    );
+                    ui::draw_table(table.ui_details(), &cfg, &mut f, None);
                     ui::draw_add_delete_password(&mut f, &table.current_mode, &table.input);
                 }
+                CurrentMode::Exit => {},
             };
         })?;
 
@@ -87,10 +74,7 @@ pub fn run(terminal: &mut Terminal<Backend>, key: Aes128Gcm) -> Result<(), Box<d
                     inputs::delete_password_input_handler(&mut table, key);
                 }
             }
-        }
-
-        if !table.active {
-            break;
+            CurrentMode::Exit => break,
         }
     }
 

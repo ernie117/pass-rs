@@ -57,7 +57,7 @@ pub fn encrypt(password: &str, aead: &Aes128Gcm) -> (Vec<u8>, String) {
         .collect();
 
     let cipher_text = aead
-        .encrypt(&GenericArray::from_slice(&nonce), password.as_bytes())
+        .encrypt(&mut GenericArray::from_slice(&nonce), password.as_bytes())
         .unwrap();
 
     (cipher_text, String::from_utf8(nonce).unwrap())
@@ -67,7 +67,7 @@ pub fn encrypt(password: &str, aead: &Aes128Gcm) -> (Vec<u8>, String) {
 pub fn encrypt_known(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
     encode(
         aead.encrypt(
-            &GenericArray::from_slice(nonce.as_bytes()),
+            &mut GenericArray::from_slice(nonce.as_bytes()),
             password.as_bytes(),
         )
         .unwrap(),
@@ -78,12 +78,12 @@ pub fn encrypt_known(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
 pub fn decrypt(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
     let decoded_password = decode(password.as_bytes()).unwrap();
     if let Ok(decrypted) = aead.decrypt(
-        &GenericArray::from_slice(nonce.as_bytes()),
+        &mut GenericArray::from_slice(nonce.as_bytes()),
         decoded_password.as_ref(),
     ) {
         String::from_utf8(decrypted).unwrap()
     } else {
-        String::from("Wrong login key for this password!")
+        "Wrong login key for this password!".into()
     }
 }
 
