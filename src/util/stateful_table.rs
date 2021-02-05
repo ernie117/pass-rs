@@ -3,7 +3,7 @@ use crate::util::json_utils::{delete_password, read_passwords, write_new_passwor
 use crate::util::utils::{
     build_table_rows, copy_to_clipboard, decrypt, encrypt_known, EncryptionData,
 };
-use aes_gcm::{aead::generic_array::GenericArray, Aes128Gcm, NewAead};
+use aes_gcm::Aes128Gcm;
 use tui::text::Span;
 use tui::widgets::{Cell, Row, TableState};
 
@@ -38,24 +38,6 @@ pub struct TableEntry {
     pub(crate) service: String,
     pub(crate) password: String,
     pub(crate) nonce: String,
-}
-
-impl Default for TableEntry {
-    fn default() -> Self {
-        let cipher = Aes128Gcm::new(GenericArray::from_slice(b"testing987654321"));
-        let nonce = "asdfjklqasdf";
-        let password = encrypt_known(EncryptionData {
-            password: "test_pass",
-            nonce,
-            key: &cipher,
-        });
-
-        Self {
-            service: String::from("test_user"),
-            password,
-            nonce: String::from(nonce),
-        }
-    }
 }
 
 impl TableEntry {
@@ -334,7 +316,25 @@ mod tests {
     use aes_gcm::{aead::generic_array::GenericArray, Aes128Gcm, NewAead};
     use std::process::Command;
 
-    // Only need this implementation for tests.
+    // Only need these implementations for tests.
+    impl Default for TableEntry {
+        fn default() -> Self {
+            let cipher = Aes128Gcm::new(GenericArray::from_slice(b"testing987654321"));
+            let nonce = "asdfjklqasdf";
+            let password = encrypt_known(EncryptionData {
+                password: "test_pass",
+                nonce,
+                key: &cipher,
+            });
+
+            Self {
+                service: String::from("test_user"),
+                password,
+                nonce: String::from(nonce),
+            }
+        }
+    }
+
     impl Default for StatefulPasswordTable {
         fn default() -> Self {
             Self {
