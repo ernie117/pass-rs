@@ -93,6 +93,9 @@ pub fn add_password_input_handler(
             Key::Char(c) => {
                 table.input.push(c);
             }
+            Key::Ctrl('w') => {
+                table.pop_one_word();
+            }
             Key::Backspace => {
                 table.input.pop();
             }

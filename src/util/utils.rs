@@ -14,6 +14,12 @@ use base64::{decode, encode};
 use super::json_utils::PasswordEntry;
 use crate::util::stateful_table::TableEntry;
 
+pub struct EncryptionData<'a> {
+    pub password: &'a str,
+    pub nonce: &'a str,
+    pub key: &'a Aes128Gcm,
+}
+
 #[inline]
 pub fn build_table_rows(map: HashMap<String, PasswordEntry>) -> Vec<TableEntry> {
     let mut entries = map
@@ -64,21 +70,22 @@ pub fn encrypt(password: &str, aead: &Aes128Gcm) -> (Vec<u8>, String) {
 }
 
 #[inline]
-pub fn encrypt_known(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
+pub fn encrypt_known(data: EncryptionData) -> String {
     encode(
-        aead.encrypt(
-            &mut GenericArray::from_slice(nonce.as_bytes()),
-            password.as_bytes(),
-        )
-        .unwrap(),
+        data.key
+            .encrypt(
+                &mut GenericArray::from_slice(data.nonce.as_bytes()),
+                data.password.as_bytes(),
+            )
+            .unwrap(),
     )
 }
 
 #[inline]
-pub fn decrypt(password: &str, aead: &Aes128Gcm, nonce: &str) -> String {
-    let decoded_password = decode(password.as_bytes()).unwrap();
-    if let Ok(decrypted) = aead.decrypt(
-        &mut GenericArray::from_slice(nonce.as_bytes()),
+pub fn decrypt(data: EncryptionData) -> String {
+    let decoded_password = decode(data.password.as_bytes()).unwrap();
+    if let Ok(decrypted) = data.key.decrypt(
+        &mut GenericArray::from_slice(data.nonce.as_bytes()),
         decoded_password.as_ref(),
     ) {
         String::from_utf8(decrypted).unwrap()

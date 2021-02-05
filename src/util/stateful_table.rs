@@ -1,6 +1,8 @@
 use crate::util::inputs::{LeapDirection, MoveDirection};
 use crate::util::json_utils::{delete_password, read_passwords, write_new_password};
-use crate::util::utils::{build_table_rows, copy_to_clipboard, decrypt, encrypt_known};
+use crate::util::utils::{
+    build_table_rows, copy_to_clipboard, decrypt, encrypt_known, EncryptionData,
+};
 use aes_gcm::{aead::generic_array::GenericArray, Aes128Gcm, NewAead};
 use tui::text::Span;
 use tui::widgets::{Cell, Row, TableState};
@@ -42,7 +44,11 @@ impl Default for TableEntry {
     fn default() -> Self {
         let cipher = Aes128Gcm::new(GenericArray::from_slice(b"testing987654321"));
         let nonce = "asdfjklqasdf";
-        let password = encrypt_known("test_pass", &cipher, nonce);
+        let password = encrypt_known(EncryptionData {
+            password: "test_pass",
+            nonce,
+            key: &cipher,
+        });
 
         Self {
             service: String::from("test_user"),
@@ -270,14 +276,25 @@ impl StatefulPasswordTable {
         }
     }
 
+    pub fn pop_one_word(&mut self) {
+        let mut words: Vec<&str> = self.input.split_whitespace().collect();
+        words.pop();
+        if !words.is_empty() {
+            self.input = words.join(" ") + " ";
+        } else {
+            self.input = words.join(" ");
+        }
+    }
+
     fn encryption(&self, mode: EncryptionMode, idx: usize) -> String {
+        let data = EncryptionData {
+            password: &self.items[idx].password,
+            nonce: &self.items[idx].nonce,
+            key: &self.key,
+        };
         match mode {
-            EncryptionMode::ENCRYPT => {
-                encrypt_known(&self.items[idx].password, &self.key, &self.items[idx].nonce)
-            }
-            EncryptionMode::DECRYPT => {
-                decrypt(&self.items[idx].password, &self.key, &self.items[idx].nonce)
-            }
+            EncryptionMode::ENCRYPT => encrypt_known(data),
+            EncryptionMode::DECRYPT => decrypt(data),
         }
     }
 

@@ -43,7 +43,7 @@ pub fn run(terminal: &mut Terminal<Backend>, key: Aes128Gcm) -> Result<(), Box<d
                     ui::draw_table(table.ui_details(), &cfg, &mut f, None);
                     ui::draw_add_delete_password(&mut f, &table.current_mode, &table.input);
                 }
-                CurrentMode::Exit => {},
+                CurrentMode::Exit => {}
             };
         })?;
 
