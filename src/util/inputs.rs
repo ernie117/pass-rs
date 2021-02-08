@@ -57,7 +57,7 @@ pub fn password_table_input_handler(table: &mut StatefulPasswordTable, key: Key)
             table.current_mode = CurrentMode::WithHelp;
         }
         Key::Char('r') => {
-            table.re_encrypt();
+            table.refresh_table();
         }
         _ => {}
     }

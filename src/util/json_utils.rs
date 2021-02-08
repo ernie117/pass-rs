@@ -15,6 +15,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Write};
 use std::path::Path;
 
+#[derive(Clone, Copy)]
 pub enum FileType {
     Passwords,
     Config,
@@ -136,23 +137,23 @@ pub fn check_directory_exists() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn check_files(key: String) -> Result<(), Box<dyn Error>> {
+pub fn check_files(key: &str) -> Result<(), Box<dyn Error>> {
     let home_dir = &get_home_dir();
-    let build_path = |ft: FileType| format!("{}/{}.json", home_dir, ft);
-    let passwords_path = build_path(FileType::Passwords);
-    if !Path::new(&passwords_path).exists() {
-        println!("Creating passwords json file...");
-        populate_new_file(FileType::Passwords, passwords_path, None)?;
-    }
-    let config_path = build_path(FileType::Config);
-    if !Path::new(&config_path).exists() {
-        println!("Creating configuration json file...");
-        populate_new_file(FileType::Config, config_path, None)?;
-    }
-    let passrc_path = build_path(FileType::Passrc);
-    if !Path::new(&passrc_path).exists() {
-        println!("Creating passrc json file...");
-        populate_new_file(FileType::Passrc, passrc_path, Some(key))?;
+    let build_path = |ft: &FileType| format!("{}/{}.json", home_dir, ft);
+
+    for file_type in [FileType::Passwords, FileType::Config, FileType::Passrc].iter() {
+        let path = build_path(file_type);
+        if !Path::new(&path).exists() {
+            println!("Creating {} json file...", file_type);
+            populate_new_file(
+                file_type,
+                path,
+                match file_type {
+                    FileType::Passrc => Some(key),
+                    FileType::Config | FileType::Passwords => None,
+                },
+            )?;
+        }
     }
 
     Ok(())
@@ -160,9 +161,9 @@ pub fn check_files(key: String) -> Result<(), Box<dyn Error>> {
 
 #[inline]
 fn populate_new_file(
-    file_type: FileType,
+    file_type: &FileType,
     path: String,
-    key: Option<String>,
+    key: Option<&str>,
 ) -> Result<(), Box<dyn Error>> {
     let mut new_file = OpenOptions::new()
         .read(true)

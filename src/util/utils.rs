@@ -4,7 +4,7 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 
 use aes_gcm::aead::{generic_array::GenericArray, Aead};
-use aes_gcm::Aes128Gcm;
+use aes_gcm::{Aes128Gcm, NewAead};
 
 use rand::distributions::Alphanumeric;
 use rand::Rng;
@@ -18,6 +18,35 @@ pub struct EncryptionData<'a> {
     pub password: &'a str,
     pub nonce: &'a str,
     pub key: &'a Aes128Gcm,
+}
+
+pub struct AesWrapper<K>
+where
+    K: Aead,
+{
+    pub aead: K,
+}
+
+impl AesWrapper<Aes128Gcm> {
+    pub fn new(key: &[u8]) -> Self {
+        Self {
+            aead: Aes128Gcm::new(&GenericArray::clone_from_slice(&key))
+        }
+    }
+}
+
+#[inline]
+pub fn keygen(mut key: Vec<u8>) -> Result<AesWrapper<Aes128Gcm>, &'static str> {
+    if key.len() < 16 {
+        // Padding.
+        let diff = 16 - key.len();
+        (0..diff).for_each(|_| key.push(0));
+        Ok(AesWrapper::new(&key))
+    } else if key.len() > 16 {
+        Err("Key is too long!")
+    } else {
+        Ok(AesWrapper::new(&key))
+    }
 }
 
 #[inline]
@@ -49,7 +78,7 @@ pub fn copy_to_clipboard(string_to_copy: &str) -> Result<(), Box<dyn Error>> {
         .ok_or("Couldn't unwrap stdin.")?
         .write_all(string_to_copy.as_bytes())
     {
-        println!("Couldn't copy to clipboard: {}", e);
+        panic!("Couldn't copy to clipboard: {}", e);
     }
 
     Ok(())
@@ -109,5 +138,20 @@ pub fn verify_dev() -> bool {
         argon2::verify_encoded(&encrypted_password, raw_password.as_bytes()).unwrap()
     } else {
         false
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_short_key_does_not_panic() {
+        assert!(keygen("tooshort".as_bytes().to_vec()).is_ok());
+    }
+
+    #[test]
+    fn test_over_long_key_is_err() {
+        assert!(keygen("averyveryverylongkeyfortesting".as_bytes().to_vec()).is_err());
     }
 }

@@ -8,8 +8,7 @@ use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::Terminal;
 
-use aes_gcm::aead::generic_array::GenericArray;
-use aes_gcm::{Aes128Gcm, NewAead};
+use crate::util::utils::keygen;
 
 mod app;
 mod util;
@@ -31,11 +30,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         key.trim_end().parse::<String>()?
     };
 
-    let final_key = GenericArray::clone_from_slice(key.as_bytes());
-    let aead = Aes128Gcm::new(&final_key);
+    let aead = if let Ok(k) = keygen(key.as_bytes().to_vec()) {
+        k.aead
+    } else {
+        panic!("Error generating key!");
+    };
 
     util::json_utils::check_directory_exists()?;
-    util::json_utils::check_files(key)?;
+    util::json_utils::check_files(&key)?;
 
     let stdout = io::stdout().into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);

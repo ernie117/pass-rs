@@ -91,17 +91,12 @@ impl StatefulPasswordTable {
     }
 
     pub fn select(&mut self, direction: MoveDirection) {
+        self.re_encrypt();
         self.state.select(Some(match self.state.selected() {
-            Some(i) => {
-                if self.decrypted {
-                    self.decrypted = false;
-                    self.items[i].password = self.encryption(EncryptionMode::ENCRYPT, i);
-                }
-                match direction {
-                    MoveDirection::DOWN => (i + 1) % self.items.len(),
-                    MoveDirection::UP => self.decrement_wraparound(i),
-                }
-            }
+            Some(i) => match direction {
+                MoveDirection::DOWN => (i + 1) % self.items.len(),
+                MoveDirection::UP => self.decrement_wraparound(i),
+            },
             None => match direction {
                 MoveDirection::DOWN => 0,
                 MoveDirection::UP => self.items.len() - 1,
@@ -110,6 +105,7 @@ impl StatefulPasswordTable {
     }
 
     pub fn move_by_5(&mut self, direction: MoveDirection) {
+        self.re_encrypt();
         self.state.select(Some(match self.state.selected() {
             Some(i) => match direction {
                 MoveDirection::DOWN => {
@@ -135,6 +131,7 @@ impl StatefulPasswordTable {
     }
 
     pub fn leap(&mut self, direction: LeapDirection) {
+        self.re_encrypt();
         self.state.select(Some(match direction {
             LeapDirection::TOP => 0,
             LeapDirection::MIDDLE => {
@@ -213,7 +210,7 @@ impl StatefulPasswordTable {
                 )
                 .is_ok()
             {
-                self.re_encrypt();
+                self.refresh_table();
             }
         }
     }
@@ -226,7 +223,7 @@ impl StatefulPasswordTable {
             EntryState::PasswordDeleted => {
                 self.current_mode = CurrentMode::PasswordDeleted;
                 self.input.clear();
-                self.re_encrypt();
+                self.refresh_table();
             }
             EntryState::NoSuchPassword => {
                 self.current_mode = CurrentMode::NoSuchPassword;
@@ -241,7 +238,7 @@ impl StatefulPasswordTable {
         self.new_password.clear();
     }
 
-    pub fn re_encrypt(&mut self) {
+    pub fn refresh_table(&mut self) {
         if let Ok(items) = read_passwords() {
             if self.decrypted {
                 self.decrypted = !self.decrypted;
@@ -280,6 +277,15 @@ impl StatefulPasswordTable {
         }
     }
 
+    fn re_encrypt(&mut self) {
+        if let Some(i) = self.state.selected() {
+            if self.decrypted {
+                self.decrypted = false;
+                self.items[i].password = self.encryption(EncryptionMode::ENCRYPT, i);
+            }
+        }
+    }
+
     fn is_service_present(&self) -> bool {
         for entry in &self.items {
             if entry.service == self.input {
@@ -299,7 +305,7 @@ impl StatefulPasswordTable {
     fn decrement_wraparound(&self, idx: usize) -> usize {
         // Should handle the results of these `try_into`s properly
         // but I don't think it's mathematically possible for None
-        // to come out of either of them. The index coming in should
+        // to come out of either of them. The value coming in should
         // always be >= 0.
         let len_isize: isize = self.items.len().try_into().unwrap();
 
@@ -564,9 +570,8 @@ mod tests {
 
         // Took me way too long to figure this out. Turns out making
         // system calls is very slow and we have to wait for the
-        // copied password text to make it into `pbcopy` before we can
-        // paste it out with `pbpaste`. Not noticeable when using the
-        // program, thankfully.
+        // copied password text to make it into `pbcopy`/`xclip` before
+        // we can paste it out with `pbpaste`/`xclip`.
         std::thread::sleep(std::time::Duration::from_millis(5));
 
         let result = if cfg!(target_os = "macos") {
